@@ -1,0 +1,971 @@
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from django.utils import timezone
+from django.db.models import Q, Sum
+
+from user_management.models import xx_notification
+from .models import (
+    xx_BudgetTransfer,
+    xx_BudgetTransferAttachment,
+    xx_BudgetTransferRejectReason,
+)
+from account_and_entitys.models import XX_PivotFund, XX_Entity, XX_Account
+from adjd_transaction.models import xx_AdjdTransactionTransfer
+from .serializers import BudgetTransferSerializer
+from user_management.permissions import IsAdmin, CanTransferBudget
+from public_funtion.update_pivot_fund import update_pivot_fund
+import base64
+from django.db.models.functions import Cast
+from django.db.models import CharField
+
+
+class TransferPagination(PageNumberPagination):
+    """Pagination class for budget transfers"""
+
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class CreateBudgetTransferView(APIView):
+    """Create budget transfers"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        if not request.data.get("transaction_date") or not request.data.get("notes"):
+            return Response(
+                {
+                    "message": "Transaction date and notes are required fields.",
+                    "errors": {
+                        "transaction_date": (
+                            "This field is required."
+                            if not request.data.get("transaction_date")
+                            else None
+                        ),
+                        "notes": (
+                            "This field is required."
+                            if not request.data.get("notes")
+                            else None
+                        ),
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        transfer_type = request.data.get("type").upper()
+
+        if transfer_type in ["FAR", "AFR", "FAD"]:
+            prefix = f"{transfer_type}-"
+        else:
+
+            prefix = "FAR-"
+
+        last_transfer = (
+            xx_BudgetTransfer.objects.filter(code__startswith=prefix)
+            .order_by("-code")
+            .first()
+        )
+
+        if last_transfer and last_transfer.code:
+            try:
+
+                last_num = int(last_transfer.code.replace(prefix, ""))
+                new_num = last_num + 1
+            except (ValueError, AttributeError):
+
+                new_num = 1
+        else:
+
+            new_num = 1
+
+        new_code = f"{prefix}{new_num:04d}"
+
+        serializer = BudgetTransferSerializer(data=request.data)
+
+        if serializer.is_valid():
+
+            transfer = serializer.save(
+                requested_by=request.user.username,
+                user_id=request.user.id,
+                status="pending",
+                request_date=timezone.now(),
+                code=new_code,
+            )
+            Notification_object = xx_notification.objects.create(
+                user_id=request.user.id,
+                message=f"New budget transfer request created with code {new_code}",
+            )
+            Notification_object.save()
+            return Response(
+                {
+                    "message": "Budget transfer request created successfully.",
+                    "data": BudgetTransferSerializer(transfer).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ListBudgetTransferView(APIView):
+    """List budget transfers with pagination"""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = TransferPagination
+
+    def post(self, request):
+        code = request.data.get("code", None)
+        date = request.data.get("date", None)
+        start_date = request.data.get("start_date", None)
+        end_date = request.data.get("end_date", None)
+        search = request.data.get("search")
+
+        if request.user.role == "admin":
+
+            transfers = xx_BudgetTransfer.objects.all()
+
+        else:
+
+            transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
+
+        print(code)
+
+        if code:
+            transfers = transfers.filter(code__icontains=code)
+
+        if date:
+
+            transfers = transfers.filter(transaction_date=search)
+
+        if start_date and end_date:
+            transfers = transfers.filter(
+                request_date__gte=start_date, request_date__lte=end_date
+            )
+
+        elif start_date:
+
+            transfers = transfers.filter(request_date__gte=start_date)
+
+        elif end_date:
+
+            transfers = transfers.filter(request_date__lte=end_date)
+
+        if search:
+            transfers = transfers.filter(
+                Q(requested_by__icontains=search)
+                | Q(code__icontains=search)
+                | Q(transaction_date__icontains=search)
+                | Q(amount__icontains=search)
+                | Q(status__icontains=search)
+            )
+
+        print(transfers)
+        # print(search)
+
+        transfers = transfers.order_by("-request_date")
+        paginator = self.pagination_class()
+        paginated_transfers = paginator.paginate_queryset(transfers, request)
+        serializer = BudgetTransferSerializer(paginated_transfers, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+
+class ListBudgetTransfer_approvels_View(APIView):
+    """List budget transfers with pagination"""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = TransferPagination
+
+    def get(self, request):
+        code = request.query_params.get("code", None)
+        date = request.data.get("date", None)
+        start_date = request.data.get("start_date", None)
+        end_date = request.data.get("end_date", None)
+        if code is None:
+            code = "FAR"
+        status_level_val = (
+            request.user.user_level.level_order
+            if request.user.user_level.level_order
+            else 0
+        )
+        transfers = xx_BudgetTransfer.objects.filter(
+            status_level=status_level_val, code__startswith=code
+        )
+        print(status_level_val)
+
+        print(code)
+
+        if code:
+            transfers = transfers.filter(code__icontains=code)
+
+        if date:
+            transfers = transfers.filter(transaction_date=date)
+
+        if start_date and end_date:
+            transfers = transfers.filter(
+                request_date__gte=start_date, request_date__lte=end_date
+            )
+        elif start_date:
+            transfers = transfers.filter(request_date__gte=start_date)
+        elif end_date:
+            transfers = transfers.filter(request_date__lte=end_date)
+
+        transfers = transfers.order_by("-request_date")
+        paginator = self.pagination_class()
+        paginated_transfers = paginator.paginate_queryset(transfers, request)
+        serializer = BudgetTransferSerializer(paginated_transfers, many=True)
+
+        # Create a list of dictionaries with just the fields we want
+        filtered_data = []
+        for item in serializer.data:
+            filtered_item = {
+                "transaction_id": item.get("transaction_id"),
+                "amount": item.get("amount"),
+                "status": item.get("status"),
+                "status_level": item.get("status_level"),
+                "requested_by": item.get("requested_by"),
+                "request_date": item.get("request_date"),
+                "code": item.get("code"),
+                "transaction_date": item.get("transaction_date"),
+            }
+            filtered_data.append(filtered_item)
+
+        return paginator.get_paginated_response(filtered_data)
+
+
+class ApproveBudgetTransferView(APIView):
+    """Approve or reject budget transfer requests (admin only)"""
+
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def put(self, request, transfer_id):
+        try:
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+
+            if transfer.status != "pending":
+                return Response(
+                    {"message": f"This transfer has already been {transfer.status}."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            action = request.data.get("action")
+
+            if action not in ["approve", "reject"]:
+                return Response(
+                    {"message": 'Invalid action. Use "approve" or "reject".'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            transfer.status = "approved" if action == "approve" else "rejected"
+
+            current_level = transfer.status_level or 0
+            next_level = current_level + 1
+
+            if next_level <= 4:
+                setattr(transfer, f"approvel_{next_level}", request.user.username)
+                setattr(transfer, f"approvel_{next_level}_date", timezone.now())
+                transfer.status_level = next_level
+
+            transfer.save()
+
+            return Response(
+                {
+                    "message": f"Budget transfer {transfer.status}.",
+                    "data": BudgetTransferSerializer(transfer).data,
+                }
+            )
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class GetBudgetTransferView(APIView):
+    """Get a specific budget transfer by ID"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, transfer_id):
+        try:
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+
+            # Check permissions: admin can see all, users can only see their own
+            # if request.user.role != 'admin' and transfer.user_id != request.user.id:
+            #     return Response(
+            #         {'message': 'You do not have permission to view this transfer.'},
+            #         status=status.HTTP_403_FORBIDDEN
+            #     )
+            # serializer = BudgetTransferSerializer(transfer)
+            # return Response(serializer.data)
+            data = {
+                "transaction_id": transfer.transaction_id,
+                "amount": transfer.amount,
+                "status": transfer.status,
+                "requested_by": transfer.requested_by,
+                "description": transfer.notes,
+            }
+
+            return Response(data)
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class UpdateBudgetTransferView(APIView):
+    """Update a budget transfer"""
+
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, transfer_id):
+
+        try:
+
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+            print(transfer.user_id)
+
+            if not request.user.role == "admin" and transfer.user_id != request.user.id:
+
+                return Response(
+                    {"message": "You do not have permission to update this transfer."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot update transfer with status "{transfer.status}". Only pending transfers can be updated.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer = BudgetTransferSerializer(
+                transfer, data=request.data, partial=True
+            )
+
+            if serializer.is_valid():
+
+                allowed_fields = [
+                    "notes",
+                    "description_x",
+                    "amount",
+                    "transaction_date",
+                ]
+
+                update_data = {}
+                for field in allowed_fields:
+                    if field in request.data:
+                        update_data[field] = request.data[field]
+
+                if not update_data:
+                    return Response(
+                        {"message": "No valid fields to update."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                for key, value in update_data.items():
+                    setattr(transfer, key, value)
+
+                transfer.save()
+
+                return Response(
+                    {
+                        "message": "Budget transfer updated successfully.",
+                        "data": BudgetTransferSerializer(transfer).data,
+                    }
+                )
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class DeleteBudgetTransferView(APIView):
+    """Delete a specific budget transfer by ID"""
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, transfer_id):
+        try:
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot delete transfer with status "{transfer.status}". Only pending transfers can be deleted.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if request.user.role != "admin" and transfer.user_id != request.user.id:
+                return Response(
+                    {"message": "You do not have permission to delete this transfer."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            transfer_code = transfer.code
+            transfer.delete()
+
+            return Response(
+                {"message": f"Budget transfer {transfer_code} deleted successfully."},
+                status=status.HTTP_200_OK,
+            )
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class Adjdtranscationtransferapprovel_reject(APIView):
+    """Submit ADJD transaction transfers for approval"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Check if we received valid data
+        if not request.data:
+            return Response(
+                {
+                    "error": "Empty data provided",
+                    "message": "Please provide at least one transaction ID",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Convert single item to list for consistent handling
+        items_to_process = []
+        if isinstance(request.data, list):
+            items_to_process = request.data
+        else:
+            # Handle single transaction case
+            items_to_process = [request.data]
+        results = []
+        # Process each transaction
+        for item in items_to_process:
+            transaction_id = item.get("transaction_id")[0]
+            decide = item.get("decide")[0]
+            if item.get("reason") is not None:
+                reson = item.get("reason")[0]
+            print(decide)
+            # Validate required fields
+            if not transaction_id:
+                return Response(
+                    {
+                        "error": "transaction id is required",
+                        "message": "Please provide transaction id",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if decide not in [2, 3]:
+                return Response(
+                    {
+                        "error": "Invalid decision value",
+                        "message": "Decision value must be 2 (approve) or 3 (reject)",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if decide == 3 and not reson:
+                return Response(
+                    {
+                        "error": "Reason is required for rejection",
+                        "message": "Please provide a reason for rejection",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                # Get the transfer record - use get() for single record
+                trasncation = xx_BudgetTransfer.objects.get(
+                    transaction_id=transaction_id
+                )
+                # Get the transfer type code
+                code = trasncation.code.split("-")[0]
+                # Handle approval flow based on transfer type
+                if code == "FAR" or code == "AFR":
+                    max_level = 4
+                else:
+                    max_level = 3
+                # Update approval based on decision
+                if decide == 2 and trasncation.status_level <= max_level:  # Approve
+                    level = trasncation.status_level
+                    # Set the appropriate approval fields
+                    if level == 2:
+                        trasncation.approvel_2 = request.user.username
+                        trasncation.approvel_2_date = timezone.now()
+                    elif level == 3:
+                        trasncation.approvel_3 = request.user.username
+                        trasncation.approvel_3_date = timezone.now()
+                    elif level == 4:
+                        trasncation.approvel_4 = request.user.username
+                        trasncation.approvel_4_date = timezone.now()
+                    if trasncation.status_level == max_level:
+                        trasncation.status = "approved"
+                    trasncation.status_level += 1
+                elif decide == 3:  # Reject
+                    # Record who rejected it at the current level
+                    level = trasncation.status_level
+                    if level == 2:
+                        trasncation.approvel_2 = request.user.username
+                        trasncation.approvel_2_date = timezone.now()
+                    elif level == 3:
+                        trasncation.approvel_3 = request.user.username
+                        trasncation.approvel_3_date = timezone.now()
+                    elif level == 4:
+                        trasncation.approvel_4 = request.user.username
+                        trasncation.approvel_4_date = timezone.now()
+                    trasncation.status_level = -1
+                    Reson_object = xx_BudgetTransferRejectReason.objects.create(
+                        Transcation_id=trasncation,
+                        reason_text=reson,
+                        reject_by=request.user.username,
+                    )
+                    Reson_object.save()
+                    trasncation.status = "rejected"
+                # Save changes to the transfer
+                trasncation.save()
+                # Update pivot fund if final approval or rejection
+                pivot_updates = []
+                if (
+                    max_level == trasncation.status_level and decide == 2
+                ) or decide == 3:
+                    trasfers = xx_AdjdTransactionTransfer.objects.filter(
+                        transaction_id=transaction_id
+                    )
+                    for transfer in trasfers:
+                        try:
+                            # Extract the necessary data
+                            item_cost_center = transfer.cost_center_code
+                            item_account_code = transfer.account_code
+                            from_center = transfer.from_center or 0
+                            to_center = transfer.to_center or 0
+                            # Update the pivot fund
+                            update_result = update_pivot_fund(
+                                item_cost_center,
+                                item_account_code,
+                                from_center,
+                                to_center,
+                                decide,
+                            )
+                            if update_result:
+                                pivot_updates.append(update_result)
+                        except Exception as e:
+                            return Response(
+                                {
+                                    "error": "Error updating pivot fund",
+                                    "message": str(e),
+                                },
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            )
+                        # Add the result for this transaction
+                        results.append(
+                            {
+                                "transaction_id": transaction_id,
+                                "status": "approved" if decide == 2 else "rejected",
+                                "status_level": trasncation.status_level,
+                                "pivot_updates": pivot_updates,
+                            }
+                        )
+            except xx_BudgetTransfer.DoesNotExist:
+                results.append(
+                    {
+                        "transaction_id": transaction_id,
+                        "status": "error",
+                        "message": f"Budget transfer not found",
+                    }
+                )
+            except Exception as e:
+                results.append(
+                    {
+                        "transaction_id": transaction_id,
+                        "status": "error",
+                        "message": str(e),
+                    }
+                )
+
+        # Return all results
+        return Response(
+            {"message": "Transfers processed", "results": results},
+            status=status.HTTP_200_OK,
+        )
+
+
+class BudgetTransferFileUploadView(APIView):
+    """Upload files for a budget transfer and store as BLOBs"""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Check if the transfer exists
+            transaction_id = request.data.get("transaction_id")
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+
+            # Check if any files were provided
+            if not request.FILES:
+                return Response(
+                    {
+                        "error": "No files provided",
+                        "message": "Please upload at least one file",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Process each uploaded file
+            uploaded_files = []
+            for file_key, uploaded_file in request.FILES.items():
+                # Read the file data
+                file_data = uploaded_file.read()
+
+                # Create the attachment record
+                attachment = xx_BudgetTransferAttachment.objects.create(
+                    budget_transfer=transfer,
+                    file_name=uploaded_file.name,
+                    file_type=uploaded_file.content_type,
+                    file_size=len(file_data),
+                    file_data=file_data,
+                )
+
+                uploaded_files.append(
+                    {
+                        "attachment_id": attachment.attachment_id,
+                        "file_name": attachment.file_name,
+                        "file_type": attachment.file_type,
+                        "file_size": attachment.file_size,
+                        "upload_date": attachment.upload_date,
+                    }
+                )
+
+            # Update the attachment flag on the budget transfer
+            transfer.attachment = "Yes"
+            transfer.save()
+
+            return Response(
+                {
+                    "message": f"{len(uploaded_files)} files uploaded successfully",
+                    "files": uploaded_files,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {
+                    "error": "Budget transfer not found",
+                    "message": f"No budget transfer found with ID: {transaction_id}",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+class DeleteBudgetTransferAttachmentView(APIView):
+    """Delete a specific file attachment from a budget transfer"""
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, transfer_id, attachment_id):
+        try:
+            # First, check if the budget transfer exists
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+
+            # Check if user has permission to modify this transfer
+            if not request.user.role == "admin" and transfer.user_id != request.user.id:
+                return Response(
+                    {
+                        "message": "You do not have permission to modify attachments for this transfer."
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            # Check if transfer is in editable state
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot modify attachments for transfer with status "{transfer.status}". Only pending transfers can be modified.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Find the specific attachment
+            try:
+                attachment = xx_BudgetTransferAttachment.objects.get(
+                    attachment_id=attachment_id, budget_transfer=transfer
+                )
+
+                # Keep attachment details for response
+                attachment_details = {
+                    "attachment_id": attachment.attachment_id,
+                    "file_name": attachment.file_name,
+                }
+
+                # Delete the attachment
+                attachment.delete()
+
+                # Check if this was the last attachment for this transfer
+                remaining_attachments = xx_BudgetTransferAttachment.objects.filter(
+                    budget_transfer=transfer
+                ).exists()
+                if not remaining_attachments:
+                    transfer.attachment = "No"
+                    transfer.save()
+
+                return Response(
+                    {
+                        "message": f'File "{attachment_details["file_name"]}" deleted successfully',
+                        "attachment_id": attachment_details["attachment_id"],
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except xx_BudgetTransferAttachment.DoesNotExist:
+                return Response(
+                    {
+                        "error": "Attachment not found",
+                        "message": f"No attachment found with ID {attachment_id} for this transfer",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {
+                    "error": "Budget transfer not found",
+                    "message": f"No budget transfer found with ID: {transfer_id}",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+class ListBudgetTransferAttachmentsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+
+            transfer_id = request.query_params.get("transaction_id")
+            # Retrieve the main budget transfer record
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+
+            # Fetch related attachments
+            attachments = xx_BudgetTransferAttachment.objects.filter(
+                budget_transfer=transfer
+            )
+
+            # Build a simplified response
+            data = []
+            for attach in attachments:
+                encoded_data = base64.b64encode(attach.file_data).decode("utf-8")
+                data.append(
+                    {
+                        "attachment_id": attach.attachment_id,
+                        "file_name": attach.file_name,
+                        "file_type": attach.file_type,
+                        "file_size": attach.file_size,
+                        "file_data": encoded_data,  # base64-encoded
+                        "upload_date": attach.upload_date,
+                    }
+                )
+
+            return Response(
+                {"transaction_id": transfer_id, "attachments": data},
+                status=status.HTTP_200_OK,
+            )
+        except xx_BudgetTransfer.DoesNotExist:
+            return Response(
+                {"error": "Transfer not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class list_budget_transfer_reject_reason(APIView):
+    """List all budget transfer reject reasons"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            reasons = xx_BudgetTransferRejectReason.objects.filter(
+                Transcation_id=request.query_params.get("transaction_id")
+            )
+            data = []
+            for reason in reasons:
+                data.append(
+                    {
+                        "transaction_id": reason.Transcation_id.transaction_id,
+                        "reason_text": reason.reason_text,
+                        "created_at": reason.reject_date,
+                        "rejected by": reason.reject_by,
+                    }
+                )
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DashboardBudgetTransferView(APIView):
+    """Dashboard view for budget transfers"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Get filter parameters from query params
+            filter_cost_center = request.query_params.get("cost_center_code")
+            filter_account_code = request.query_params.get("account_code")
+
+            # Get the count of all budget transfers
+            total_transfers_count = xx_BudgetTransfer.objects.count()
+
+            total_transfers_far = xx_BudgetTransfer.objects.filter(
+                code__startswith="FAR"
+            ).count()
+            total_transfers_afr = xx_BudgetTransfer.objects.filter(
+                code__startswith="AFR"
+            ).count()
+            total_transfers_fad = xx_BudgetTransfer.objects.filter(
+                code__startswith="FAD"
+            ).count()
+
+            # Get the count of approved budget transfers
+            approved_transfers = xx_BudgetTransfer.objects.filter(
+                status="approved"
+            ).count()
+
+            # Get the count of rejected budget transfers
+            rejected_transfers = xx_BudgetTransfer.objects.filter(
+                status="rejected"
+            ).count()
+
+            # Get the count of pending budget transfers
+            pending_transfers = xx_BudgetTransfer.objects.filter(
+                status="pending"
+            ).count()
+
+            # Filter 1: Total from_center for same cost_center_code and account_code combination
+            from_center_query = xx_AdjdTransactionTransfer.objects.filter(
+                transaction__status="approved"
+            )
+
+            if filter_cost_center:
+                from_center_query = from_center_query.filter(
+                    cost_center_code=filter_cost_center
+                )
+
+            if filter_account_code:
+                from_center_query = from_center_query.filter(
+                    account_code=filter_account_code
+                )
+
+            from_center_combinations = (
+                from_center_query.annotate(
+                    cost_center_code_str=Cast("cost_center_code", CharField()),
+                    account_code_str=Cast("account_code", CharField()),
+                )
+                .values("cost_center_code_str", "account_code_str")
+                .annotate(
+                    total_from_center=Sum("from_center"),
+                    total_to_center=Sum("to_center"),
+                )
+                .order_by("cost_center_code_str", "account_code_str")
+            )
+
+            # Filter 2: Total amounts for each cost_center_code
+            Approved_Transfers = xx_BudgetTransfer.objects.filter(status="approved")
+            cost_center_totals = []
+            for transfer in Approved_Transfers:
+                cost_center_totals.append(
+                    xx_AdjdTransactionTransfer.objects.filter(
+                        transaction=transfer.transaction_id
+                    )
+                    .annotate(
+                        cost_center_code_str=Cast("cost_center_code", CharField()),
+                        account_code_str=Cast("account_code", CharField()),
+                    )
+                    .values("cost_center_code_str")
+                    .annotate(
+                        total_from_center=Sum("from_center"),
+                        total_to_center=Sum("to_center"),
+                    )
+                    .order_by("cost_center_code_str")
+                )
+
+            account_code_totals = []
+            for transfer in Approved_Transfers:
+                account_code_totals.append(
+                    xx_AdjdTransactionTransfer.objects.filter(
+                        transaction=transfer.transaction_id
+                    )
+                    .annotate(
+                        cost_center_code_str=Cast("cost_center_code", CharField()),
+                        account_code_str=Cast("account_code", CharField()),
+                    )
+                    .values("account_code_str")
+                    .annotate(
+                        total_from_center=Sum("from_center"),
+                        total_to_center=Sum("to_center"),
+                    )
+                    .order_by("account_code_str")
+                )
+
+            all_combinations = []
+            for transfer in Approved_Transfers:
+                all_combinations.append(
+                    xx_AdjdTransactionTransfer.objects.filter(
+                        transaction=transfer.transaction_id
+                    )
+                    .annotate(
+                        cost_center_code_str=Cast("cost_center_code", CharField()),
+                        account_code_str=Cast("account_code", CharField()),
+                    )
+                    .values("cost_center_code_str", "account_code_str")
+                    .annotate(
+                        total_from_center=Sum("from_center"),
+                        total_to_center=Sum("to_center"),
+                    )
+                    .order_by("cost_center_code_str", "account_code_str")
+                )
+
+            transfers_State1 = xx_BudgetTransfer.objects.filter(status_level=1).count()
+            transfers_State2 = xx_BudgetTransfer.objects.filter(status_level=2).count()
+            transfers_State3 = xx_BudgetTransfer.objects.filter(status_level=3).count()
+            transfers_State4 = xx_BudgetTransfer.objects.filter(status_level=4).count()
+            return Response(
+                {
+                    "total_transfers": total_transfers_count,
+                    "total_transfers_far": total_transfers_far,
+                    "total_transfers_afr": total_transfers_afr,
+                    "total_transfers_fad": total_transfers_fad,
+                    "approved_transfers": approved_transfers,
+                    "rejected_transfers": rejected_transfers,
+                    "pending_transfers": pending_transfers,
+                    "filtered_combinations": list(from_center_combinations),
+                    "cost_center_totals": list(cost_center_totals),
+                    "account_code_totals": list(account_code_totals),
+                    "all_combinations": list(all_combinations),
+                    "applied_filters": {
+                        "cost_center_code": filter_cost_center,
+                        "account_code": filter_account_code,
+                    },
+                    "pending_transfers": {
+                        "Level1": transfers_State1,
+                        "Level2": transfers_State2,
+                        "Level3": transfers_State3,
+                        "Level4": transfers_State4,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

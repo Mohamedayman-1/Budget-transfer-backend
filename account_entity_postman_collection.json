@@ -1,0 +1,404 @@
+{
+  "info": {
+    "name": "Budget Transfer - Accounts & Entities",
+    "description": "API collection for the Accounts and Entities module of the Budget Transfer application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Accounts",
+      "item": [
+        {
+          "name": "List Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/accounts/?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "accounts", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"account\": \"ACC123\",\n    \"parent\": \"PARENT001\",\n    \"alias_default\": \"Test Account\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/accounts/create/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "accounts", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Account Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/accounts/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "accounts", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Account",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"account\": \"ACC123\",\n    \"parent\": \"PARENT002\",\n    \"alias_default\": \"Updated Account Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/accounts/1/update/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "accounts", "1", "update", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/accounts/1/delete/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "accounts", "1", "delete", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entities",
+      "item": [
+        {
+          "name": "List Entities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/entities/?page=1&page_size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "entities", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Entity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entity\": \"ENT123\",\n    \"parent\": \"PARENT001\",\n    \"alias_default\": \"Test Entity\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/entities/create/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "entities", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Entity Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/entities/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "entities", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Entity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entity\": \"ENT123\",\n    \"parent\": \"PARENT002\",\n    \"alias_default\": \"Updated Entity Name\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/entities/1/update/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "entities", "1", "update", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Entity",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/entities/1/delete/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "entities", "1", "delete", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pivot Funds",
+      "item": [
+        {
+          "name": "List Pivot Funds",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/?page=1&page_size=20&entity_id=1&account_id=1&year=2023",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", ""],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20"
+                },
+                {
+                  "key": "entity_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "account_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "year",
+                  "value": "2023",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Pivot Fund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entity\": \"ENT123\",\n    \"account\": \"ACC123\",\n    \"year\": 2023,\n    \"actual\": 5000.00,\n    \"fund\": 4000.00,\n    \"budget\": 6000.00,\n    \"encumbrance\": 1000.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/create/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Multiple Pivot Funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"entity\": \"ENT123\",\n        \"account\": \"ACC123\",\n        \"year\": 2023,\n        \"actual\": 5000.00,\n        \"fund\": 4000.00,\n        \"budget\": 6000.00,\n        \"encumbrance\": 1000.00\n    },\n    {\n        \"entity\": \"ENT456\",\n        \"account\": \"ACC456\",\n        \"year\": 2023,\n        \"actual\": 3000.00,\n        \"fund\": 2000.00,\n        \"budget\": 4000.00,\n        \"encumbrance\": 500.00\n    }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/create/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", "create", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Pivot Fund Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Pivot Fund",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entity\": \"ENT123\",\n    \"account\": \"ACC123\",\n    \"year\": 2023,\n    \"actual\": 6000.00,\n    \"fund\": 5000.00,\n    \"budget\": 7000.00,\n    \"encumbrance\": 1500.00\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/1/update/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", "1", "update", ""]
+            }
+          }
+        },
+        {
+          "name": "Delete Pivot Fund",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/accounts-entities/pivot-funds/1/delete/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "accounts-entities", "pivot-funds", "1", "delete", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
