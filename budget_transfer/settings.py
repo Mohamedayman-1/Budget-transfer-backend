@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-budget-transfer-secret-key-change-this-in-producti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','185.197.251.203']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','185.197.251.203','budget-transfer-backend-production.up.railway.app']
 
 # Application definition
 INSTALLED_APPS = [
