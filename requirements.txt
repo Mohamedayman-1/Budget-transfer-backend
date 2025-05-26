@@ -6,3 +6,4 @@ oracledb
 channels
 pandas
 gunicorn
+openpyxl
