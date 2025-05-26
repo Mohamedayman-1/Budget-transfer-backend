@@ -22,7 +22,7 @@ urlpatterns = [
     path('levels/create/', UserLevelCreateView.as_view(), name='user-level-create'),
     path('levels/update/', UserLevelUpdateView.as_view(), name='level_update'),
     path('levels/delete/', UserLevelDeleteView.as_view(), name='level_delete'),
-
+    path("users/level/update", UpdateUserLevelView.as_view(), name="user_delete"),
 
     # Notification management endpoints
     #
