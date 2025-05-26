@@ -67,7 +67,6 @@ class TokenExpiredView(APIView):
         })
 
 
-
 # User Management Views
 class ListUsersView(APIView):
     """List all users (admin only)"""
@@ -154,27 +153,27 @@ class UserDeleteView(APIView):
 
 
 # User Level Views
-class UpdateUserLevelView(APIView):
+class UpdateUserLevelView(APIView): # Update a user's level
     """Assign a specific user level to a user (admin only)"""
     permission_classes = [IsAuthenticated, IsAdmin]
-    
+
     def put(self, request):
         try:
             # Get the user
-            
+
             # Get the level ID from request data
             level_id = request.data.get('level_order')
             user_id = request.data.get('user_id')
 
             user = xx_User.objects.get(id=user_id)
 
-            
+
             if level_id is None:
                 return Response({
                     'error': 'Missing level_id',
                     'message': 'Please provide a level_id to assign'
                 }, status=status.HTTP_400_BAD_REQUEST)
-                
+
             # Check if the level exists
             try:
                 user_level = xx_UserLevel.objects.get(level_order=level_id)
@@ -183,12 +182,12 @@ class UpdateUserLevelView(APIView):
                     'error': 'Invalid level_id',
                     'message': f'No user level found with ID: {level_id}'
                 }, status=status.HTTP_404_NOT_FOUND)
-                
+
             # Update the user's level
             old_level = user.user_level.name if user.user_level else 'None'
             user.user_level = user_level
             user.save()
-            
+
             return Response({
                 'message': f'User level updated successfully for {user.username}',
                 'data': {
@@ -199,12 +198,13 @@ class UpdateUserLevelView(APIView):
                     'level_order': user_level.level_order
                 }
             }, status=status.HTTP_200_OK)
-            
+
         except xx_User.DoesNotExist:
             return Response({
                 'error': 'User not found',
                 'message': f'No user found with ID: {user_id}'
             }, status=status.HTTP_404_NOT_FOUND)
+
 class UserLevelCreateView(APIView):
     """Create a new user level"""
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -226,7 +226,8 @@ class UserLevelCreateView(APIView):
                 'data': serializer.data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
-class UserLevelUpdateView(APIView):
+
+class UserLevelUpdateView(APIView): # Update the data of the Level itself
     """Update an existing user level (name, level_order)."""
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -256,6 +257,7 @@ class UserLevelUpdateView(APIView):
                 'description': level.description
             }
         })
+
 class UserLevelDeleteView(APIView):
     """Delete a specific user level."""
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -281,7 +283,6 @@ class UserLevelListView(APIView):
         levels = xx_UserLevel.objects.all()
         serializer = UserLevelSerializer(levels, many=True)
         return Response(serializer.data)
-
 
 
 # Notification Views
@@ -380,4 +381,3 @@ class Delete_Nnotification(APIView):
             return Response({'message': 'Notification deleted successfully.'})
         except xx_notification.DoesNotExist:
             return Response({'message': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
-
