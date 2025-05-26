@@ -242,7 +242,7 @@ class UserLevelUpdateView(APIView):
         if level is None:
             return Response({'message': 'User level not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        for field in ['name', 'level_order']:
+        for field in ["name", "level_order", "description"]:
             if field in request.data:
                 setattr(level, field, request.data[field])
 
@@ -252,7 +252,8 @@ class UserLevelUpdateView(APIView):
             'data': {
                 'id': level.id,
                 'name': level.name,
-                'level_order': level.level_order
+                'level_order': level.level_order,
+                'description': level.description
             }
         })
 class UserLevelDeleteView(APIView):
