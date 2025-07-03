@@ -117,11 +117,11 @@ DATABASES = {
     'default':
     {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'PROD',  # Oracle SID or service name
-        'USER': 'BUDGET_TRANSFER',  # Replace with your Oracle username
-        'PASSWORD': 'KgJyrx3$1',  # Replace with your Oracle password
-        'HOST': '185.197.251.203',  # Replace with your Oracle host
-        'PORT': '1521',  # Default Oracle port
+        'NAME': 'PROD', 
+        'USER': 'BUDGET_TRANSFER', 
+        'PASSWORD': 'KgJyrx3$1',  
+        'HOST': '185.197.251.203',  
+        'PORT': '1521', 
     }
 }
 
