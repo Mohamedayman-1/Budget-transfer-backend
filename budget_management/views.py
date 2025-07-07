@@ -133,8 +133,6 @@ class ListBudgetTransferView(APIView):
 
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
 
-        print(code)
-
         if code:
             transfers = transfers.filter(code__icontains=code)
 
@@ -163,9 +161,6 @@ class ListBudgetTransferView(APIView):
                 | Q(amount__icontains=search)
                 | Q(status__icontains=search)
             )
-
-        print(transfers)
-        # print(search)
 
         transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
@@ -196,9 +191,6 @@ class ListBudgetTransfer_approvels_View(APIView):
         transfers = xx_BudgetTransfer.objects.filter(
             status_level=status_level_val, code__startswith=code
         )
-        print(status_level_val)
-
-        print(code)
 
         if code:
             transfers = transfers.filter(code__icontains=code)
@@ -329,7 +321,6 @@ class UpdateBudgetTransferView(APIView):
         try:
 
             transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
-            print(transfer.user_id)
 
             if not request.user.role == "admin" and transfer.user_id != request.user.id:
 
@@ -456,7 +447,6 @@ class Adjdtranscationtransferapprovel_reject(APIView):
             decide = item.get("decide")[0]
             if item.get("reason") is not None:
                 reson = item.get("reason")[0]
-            print(decide)
             # Validate required fields
             if not transaction_id:
                 return Response(
