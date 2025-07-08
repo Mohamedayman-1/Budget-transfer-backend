@@ -808,37 +808,27 @@ class DashboardBudgetTransferView(APIView):
 
     def get(self, request):
         try:
+            from django.db.models import Case, When, Count
+            from collections import defaultdict
+            
             # Get filter parameters from query params
             filter_cost_center = request.query_params.get("cost_center_code")
             filter_account_code = request.query_params.get("account_code")
 
-            # Get the count of all budget transfers
-            total_transfers_count = xx_BudgetTransfer.objects.count()
-
-            total_transfers_far = xx_BudgetTransfer.objects.filter(
-                code__startswith="FAR"
-            ).count()
-            total_transfers_afr = xx_BudgetTransfer.objects.filter(
-                code__startswith="AFR"
-            ).count()
-            total_transfers_fad = xx_BudgetTransfer.objects.filter(
-                code__startswith="FAD"
-            ).count()
-
-            # Get the count of approved budget transfers
-            approved_transfers = xx_BudgetTransfer.objects.filter(
-                status="approved"
-            ).count()
-
-            # Get the count of rejected budget transfers
-            rejected_transfers = xx_BudgetTransfer.objects.filter(
-                status="rejected"
-            ).count()
-
-            # Get the count of pending budget transfers
-            pending_transfers = xx_BudgetTransfer.objects.filter(
-                status="pending"
-            ).count()
+            # Optimize: Get all counts in a single query using conditional aggregation
+            transfer_stats = xx_BudgetTransfer.objects.aggregate(
+                total_transfers=Count('transaction_id'),
+                total_transfers_far=Count(Case(When(code__startswith='FAR', then=1))),
+                total_transfers_afr=Count(Case(When(code__startswith='AFR', then=1))),
+                total_transfers_fad=Count(Case(When(code__startswith='FAD', then=1))),
+                approved_transfers=Count(Case(When(status='approved', then=1))),
+                rejected_transfers=Count(Case(When(status='rejected', then=1))),
+                pending_transfers=Count(Case(When(status='pending', then=1))),
+                transfers_State1=Count(Case(When(status_level=1, then=1))),
+                transfers_State2=Count(Case(When(status_level=2, then=1))),
+                transfers_State3=Count(Case(When(status_level=3, then=1))),
+                transfers_State4=Count(Case(When(status_level=4, then=1)))
+            )
 
             # Filter 1: Total from_center for same cost_center_code and account_code combination
             from_center_query = xx_AdjdTransactionTransfer.objects.filter(
@@ -868,88 +858,75 @@ class DashboardBudgetTransferView(APIView):
                 .order_by("cost_center_code_str", "account_code_str")
             )
 
-            # Filter 2: Total amounts for each cost_center_code
-            Approved_Transfers = xx_BudgetTransfer.objects.filter(status="approved")
-            cost_center_totals = []
-            for transfer in Approved_Transfers:
-                cost_center_totals.append(
-                    xx_AdjdTransactionTransfer.objects.filter(
-                        transaction=transfer.transaction_id
-                    )
-                    .annotate(
-                        cost_center_code_str=Cast("cost_center_code", CharField()),
-                        account_code_str=Cast("account_code", CharField()),
-                    )
-                    .values("cost_center_code_str")
-                    .annotate(
-                        total_from_center=Sum("from_center"),
-                        total_to_center=Sum("to_center"),
-                    )
-                    .order_by("cost_center_code_str")
-                )
+            # Optimize: Replace loops with single aggregation queries
+            # Get all approved transaction transfers in one query
+            approved_transactions_query = xx_AdjdTransactionTransfer.objects.filter(
+                transaction__status="approved"
+            ).annotate(
+                cost_center_code_str=Cast("cost_center_code", CharField()),
+                account_code_str=Cast("account_code", CharField()),
+            )
 
-            account_code_totals = []
-            for transfer in Approved_Transfers:
-                account_code_totals.append(
-                    xx_AdjdTransactionTransfer.objects.filter(
-                        transaction=transfer.transaction_id
-                    )
-                    .annotate(
-                        cost_center_code_str=Cast("cost_center_code", CharField()),
-                        account_code_str=Cast("account_code", CharField()),
-                    )
-                    .values("account_code_str")
-                    .annotate(
-                        total_from_center=Sum("from_center"),
-                        total_to_center=Sum("to_center"),
-                    )
-                    .order_by("account_code_str")
+            # Get cost center totals
+            cost_center_totals_data = (
+                approved_transactions_query
+                .values("cost_center_code_str")
+                .annotate(
+                    total_from_center=Sum("from_center"),
+                    total_to_center=Sum("to_center"),
                 )
+                .order_by("cost_center_code_str")
+            )
 
-            all_combinations = []
-            for transfer in Approved_Transfers:
-                all_combinations.append(
-                    xx_AdjdTransactionTransfer.objects.filter(
-                        transaction=transfer.transaction_id
-                    )
-                    .annotate(
-                        cost_center_code_str=Cast("cost_center_code", CharField()),
-                        account_code_str=Cast("account_code", CharField()),
-                    )
-                    .values("cost_center_code_str", "account_code_str")
-                    .annotate(
-                        total_from_center=Sum("from_center"),
-                        total_to_center=Sum("to_center"),
-                    )
-                    .order_by("cost_center_code_str", "account_code_str")
+            # Get account code totals
+            account_code_totals_data = (
+                approved_transactions_query
+                .values("account_code_str")
+                .annotate(
+                    total_from_center=Sum("from_center"),
+                    total_to_center=Sum("to_center"),
                 )
+                .order_by("account_code_str")
+            )
 
-            transfers_State1 = xx_BudgetTransfer.objects.filter(status_level=1).count()
-            transfers_State2 = xx_BudgetTransfer.objects.filter(status_level=2).count()
-            transfers_State3 = xx_BudgetTransfer.objects.filter(status_level=3).count()
-            transfers_State4 = xx_BudgetTransfer.objects.filter(status_level=4).count()
+            # Get all combinations
+            all_combinations_data = (
+                approved_transactions_query
+                .values("cost_center_code_str", "account_code_str")
+                .annotate(
+                    total_from_center=Sum("from_center"),
+                    total_to_center=Sum("to_center"),
+                )
+                .order_by("cost_center_code_str", "account_code_str")
+            )
+
+            # Convert to the expected nested list format to maintain response structure
+            cost_center_totals = [list(cost_center_totals_data)]
+            account_code_totals = [list(account_code_totals_data)]
+            all_combinations = [list(all_combinations_data)]
+
             return Response(
                 {
-                    "total_transfers": total_transfers_count,
-                    "total_transfers_far": total_transfers_far,
-                    "total_transfers_afr": total_transfers_afr,
-                    "total_transfers_fad": total_transfers_fad,
-                    "approved_transfers": approved_transfers,
-                    "rejected_transfers": rejected_transfers,
-                    "pending_transfers": pending_transfers,
+                    "total_transfers": transfer_stats['total_transfers'],
+                    "total_transfers_far": transfer_stats['total_transfers_far'],
+                    "total_transfers_afr": transfer_stats['total_transfers_afr'],
+                    "total_transfers_fad": transfer_stats['total_transfers_fad'],
+                    "approved_transfers": transfer_stats['approved_transfers'],
+                    "rejected_transfers": transfer_stats['rejected_transfers'],
+                    "pending_transfers": transfer_stats['pending_transfers'],
                     "filtered_combinations": list(from_center_combinations),
-                    "cost_center_totals": list(cost_center_totals),
-                    "account_code_totals": list(account_code_totals),
-                    "all_combinations": list(all_combinations),
+                    "cost_center_totals": cost_center_totals,
+                    "account_code_totals": account_code_totals,
+                    "all_combinations": all_combinations,
                     "applied_filters": {
                         "cost_center_code": filter_cost_center,
                         "account_code": filter_account_code,
                     },
                     "pending_transfers": {
-                        "Level1": transfers_State1,
-                        "Level2": transfers_State2,
-                        "Level3": transfers_State3,
-                        "Level4": transfers_State4,
+                        "Level1": transfer_stats['transfers_State1'],
+                        "Level2": transfer_stats['transfers_State2'],
+                        "Level3": transfer_stats['transfers_State3'],
+                        "Level4": transfer_stats['transfers_State4'],
                     },
                 },
                 status=status.HTTP_200_OK,
