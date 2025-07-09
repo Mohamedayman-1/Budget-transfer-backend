@@ -9,8 +9,8 @@ from .models import xx_User, xx_UserLevel,xx_notification
 from .serializers import NotificationSerializer, RegisterSerializer, LoginSerializer, UserLevelSerializer
 from .permissions import IsAdmin
 from .utils import send_notification
-
-
+# from test_querty import LLMQueryGenerator
+# from django.db import connection
 # Authentication Views
 class RegisterView(APIView):
     """Register a new user"""
@@ -381,3 +381,159 @@ class Delete_Nnotification(APIView):
             return Response({'message': 'Notification deleted successfully.'})
         except xx_notification.DoesNotExist:
             return Response({'message': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+
+# def execute_oracle_query(sql_query):
+#         """Execute SQL query safely in Oracle database"""
+#         # Security: Only allow SELECT statements
+#         if not sql_query.strip().upper().startswith('SELECT'):
+#             raise ValueError("Only SELECT queries are allowed for security reasons")
+        
+#         with connection.cursor() as cursor:
+#             cursor.execute(sql_query)
+            
+#             # Get column names
+#             columns = [col[0] for col in cursor.description]
+            
+#             # Fetch all results
+#             rows = cursor.fetchall()
+            
+#             # Convert to list of dictionaries
+#             results = []
+#             for row in rows:
+#                 row_dict = {}
+#                 for i, value in enumerate(row):
+#                     # Handle Oracle-specific data types
+#                     if hasattr(value, 'read'):  # Handle CLOB/BLOB
+#                         row_dict[columns[i]] = value.read()
+#                     else:
+#                         row_dict[columns[i]] = value
+#                 results.append(row_dict)
+            
+#             return {
+#                 'columns': columns,
+#                 'data': results,
+#                 'row_count': len(results)
+#             }
+
+
+
+
+# class testChatbot(APIView):
+#     """Test chatbot functionality"""
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         user_message = request.data.get('message', '')
+#         if not user_message:
+#             return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+#         # Example of using LLMQueryGenerator to generate a response
+#         table_info_example = {
+#             # User Management Models
+#             "XX_USER": [
+#                 "id", "username", "role", "is_active", "is_staff", 
+#                 "can_transfer_budget", "user_level_id", "password", 
+#                 "last_login", "is_superuser"
+#             ],
+#             "XX_USER_LEVEL": [
+#                 "id", "name", "description", "level_order"
+#             ],
+#             "XX_NOTIFICATION": [
+#                 "id", "user_id", "message", "is_read", "created_at", 
+#                 "is_system_read", "is_shown"
+#             ],
+            
+#             # Budget Management Models
+#             "XX_BUDGET_TRANSFER": [
+#                 "transaction_id", "transaction_date", "amount", "status", 
+#                 "requested_by", "user_id", "request_date", "notes", 
+#                 "description_x", "code", "gl_posting_status", "approvel_1", 
+#                 "approvel_2", "approvel_3", "approvel_4", "approvel_1_date", 
+#                 "approvel_2_date", "approvel_3_date", "approvel_4_date", 
+#                 "status_level", "attachment", "fy", "group_id", "interface_id", 
+#                 "reject_group_id", "reject_interface_id", "approve_group_id", 
+#                 "approve_interface_id", "report", "type"
+#             ],
+#             "XX_BUDGET_TRANSFER_ATTACHMENT": [
+#                 "attachment_id", "transaction_id", "file_name", "file_type", 
+#                 "file_size", "file_data", "upload_date"
+#             ],
+#             "XX_BUDGET_TRANSFER_REJECT_REASON": [
+#                 "id", "Transcation_id", "reason_text", "reject_date", "reject_by"
+#             ],
+            
+#             # ADJD Transaction Models
+#             "xx_AdjdTransactionTransfer": [
+#                 "transfer_id", "cost_center_code", "account_name", 
+#                 "approved_budget", "available_budget", "from_center", 
+#                 "to_center", "transaction_id", "reason", "account_code", 
+#                 "cost_center_name", "done", "encumbrance", "actual", "file"
+#             ],
+            
+#             # Account and Entity Models
+#             "XX_Account": [
+#                 "id", "account", "parent", "alias_default"
+#             ],
+#             "XX_Entity": [
+#                 "id", "entity", "parent", "alias_default"
+#             ],
+#             "XX_PivotFund": [
+#                 "id", "entity", "account", "year", "actual", "fund", 
+#                 "budget", "encumbrance"
+#             ],
+#             "XX_ADJD_TRANSACTION_AUDIT": [
+#                 "id", "type", "transfer_id", "transcation_code", 
+#                 "cost_center_code", "account_code"
+#             ],
+#             "XX_ACCOUNT_ENTITY_LIMIT": [
+#                 "id", "account_id", "entity_id", "is_transer_allowed_for_source", 
+#                 "is_transer_allowed_for_target", "is_transer_allowed", 
+#                 "source_count", "target_count"
+#             ],
+            
+#             # Relationships and common queries
+#             "COMMON_JOINS": {
+#                 "user_with_level": "XX_USER.user_level_id = XX_USER_LEVEL.id",
+#                 "notifications_with_user": "XX_NOTIFICATION.user_id = XX_USER.id",
+#                 "budget_transfer_with_user": "XX_BUDGET_TRANSFER.user_id = XX_USER.id",
+#                 "adjd_transfer_with_budget": "xx_AdjdTransactionTransfer.transaction_id = XX_BUDGET_TRANSFER.transaction_id",
+#                 "attachments_with_transfer": "XX_BUDGET_TRANSFER_ATTACHMENT.transaction_id = XX_BUDGET_TRANSFER.transaction_id",
+#                 "reject_reasons_with_transfer": "XX_BUDGET_TRANSFER_REJECT_REASON.Transcation_id = XX_BUDGET_TRANSFER.transaction_id",
+#                 "pivot_fund_entity_account": "XX_PivotFund.entity = XX_Entity.entity AND XX_PivotFund.account = XX_Account.account"
+#             },
+            
+#             # Commonly used filters
+#             "COMMON_FILTERS": {
+#                 "active_users": "XX_USER.is_active = 1",
+#                 "admin_users": "XX_USER.role = 'admin'",
+#                 "users_can_transfer": "XX_USER.can_transfer_budget = 1",
+#                 "unread_notifications": "XX_NOTIFICATION.is_read = 0",
+#                 "pending_transfers": "XX_BUDGET_TRANSFER.status = 'pending'",
+#                 "current_year_pivot": f"XX_PivotFund.year = {timezone.now().year}",
+#                 "completed_adjd_transfers": "xx_AdjdTransactionTransfer.done = 1"
+#             }
+#         }
+#         generator = LLMQueryGenerator(table_info_example)
+
+#         sql_query = generator.generate_sql_query(user_message)
+
+#         try:
+#             query_results = execute_oracle_query(sql_query)
+#             return Response({
+#                 'generated_query': sql_query,
+#                 'results': query_results,
+#                 'message': 'Query executed successfully'
+#             })
+#         except Exception as e:
+#             return Response({
+#                 'generated_query': sql_query,
+#                 'error': str(e),
+#                 'message': 'Query execution failed'
+#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+

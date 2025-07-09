@@ -14,7 +14,8 @@ SECRET_KEY = 'django-insecure-budget-transfer-secret-key-change-this-in-producti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost','185.197.251.203','budget-transfer-backend-production.up.railway.app']
+##ALLOWED_HOSTS = ['127.0.0.1', 'localhost','185.197.251.203','budget-transfer-backend-production.up.railway.app']
+ALLOWED_HOSTS = ['lightidea.org', 'localhost', '127.0.0.1','185.197.251.203','www.lightidea.org']
 
 # Application definition
 INSTALLED_APPS = [
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'budget_management',
     'adjd_transaction',  # Add the new app
     'account_and_entitys',  # Add the new app
+    'django_extensions',
 ]
 
 AUTH_USER_MODEL = 'user_management.xx_User'
@@ -117,11 +119,11 @@ DATABASES = {
     'default':
     {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'PROD', 
-        'USER': 'BUDGET_TRANSFER', 
-        'PASSWORD': 'KgJyrx3$1',  
-        'HOST': '185.197.251.203',  
-        'PORT': '1521', 
+        'NAME': 'PROD',  # Oracle SID or service name
+        'USER': 'BUDGET_TRANSFER',  # Replace with your Oracle username
+        'PASSWORD': 'KgJyrx3$1',  # Replace with your Oracle password
+        'HOST': '185.197.251.203',  # Replace with your Oracle host
+        'PORT': '1521',  # Default Oracle port
     }
 }
 
@@ -180,10 +182,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
-
+#forward to https 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # Only for development
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1', 'http://localhost', 'http://185.197.251.203']
+CSRF_TRUSTED_ORIGINS = [  'https://lightidea.org',
+    'https://www.lightidea.org',
+    'https://lightidea.org:9000',
+    'https://budgettransfer.lightidea.org',
+]

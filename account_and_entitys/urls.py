@@ -4,7 +4,8 @@ from .views import (
     EntityListView, EntityCreateView, EntityDetailView, EntityUpdateView, EntityDeleteView,
     PivotFundListView, PivotFundCreateView, PivotFundDetailView, PivotFundUpdateView, PivotFundDeleteView,
     AdjdTransactionAuditListView, AdjdTransactionAuditCreateView, AdjdTransactionAuditDetailView, 
-    AdjdTransactionAuditUpdateView, AdjdTransactionAuditDeleteView, list_ACCOUNT_ENTITY_LIMIT,UpdateAccountEntityLimit,DeleteAccountEntityLimit
+    AdjdTransactionAuditUpdateView, AdjdTransactionAuditDeleteView, list_ACCOUNT_ENTITY_LIMIT,UpdateAccountEntityLimit,DeleteAccountEntityLimit,
+   
 )
 
 urlpatterns = [
@@ -42,4 +43,7 @@ urlpatterns = [
     # Update and Delete URLs for Account Entity Limit
     path('account-entity-limit/update/', UpdateAccountEntityLimit.as_view(), name='update_limit'),
     path('account-entity-limit/delete/', DeleteAccountEntityLimit.as_view(), name='delete_limit'),
+    
+    # Main Currency URLs
+   
 ]

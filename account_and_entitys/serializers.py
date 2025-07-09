@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit,XX_ACCOUNT_ENTITY_LIMIT
+from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit, XX_ACCOUNT_ENTITY_LIMIT
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,3 +25,4 @@ class AccountEntityLimitSerializer(serializers.ModelSerializer):
     class Meta:
         model = XX_ACCOUNT_ENTITY_LIMIT
         fields = '__all__'
+

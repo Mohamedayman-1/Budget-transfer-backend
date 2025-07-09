@@ -79,3 +79,5 @@ class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
     class Meta:
         db_table = 'XX_ACCOUNT_ENTITY_LIMIT'
         unique_together = ('account_id', 'entity_id')
+
+

@@ -70,6 +70,12 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
         db_table = 'XX_USER'
         # If you have other Meta options, keep them here
 
+
+
+
+
+
+
 class xx_UserLevel(models.Model):
     """Model to represent user levels/roles in the system."""
     name = models.CharField(max_length=50, unique=True)
@@ -82,8 +88,6 @@ class xx_UserLevel(models.Model):
 
     def __str__(self):
         return self.name
-
-
 
 class xx_notification(models.Model):
     """Model to represent notifications for users."""

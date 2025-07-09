@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/budget/', include('budget_management.urls')),
     path('api/adjd-transfers/', include('adjd_transaction.urls')),
     path('api/accounts-entities/', include('account_and_entitys.urls')),  # Add the new app's URLs
+    path('api/admin_panel/', include('Admin_Panel.urls')),  # Add the new app's URLs
     path('', TemplateView.as_view(template_name='index.html'), name='login'),
     path('dashboard/', TemplateView.as_view(template_name='dashboard.html'), name='dashboard'),
     # Path to serve any template

@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit,XX_ACCOUNT_ENTITY_LIMIT
-from .serializers import AccountSerializer, EntitySerializer, PivotFundSerializer, TransactionAuditSerializer,AccountEntityLimitSerializer
+from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit, XX_ACCOUNT_ENTITY_LIMIT
+from .serializers import AccountSerializer, EntitySerializer, PivotFundSerializer, TransactionAuditSerializer, AccountEntityLimitSerializer
 
 class EntityPagination(PageNumberPagination):
     """Pagination class for entities and accounts"""
@@ -562,3 +562,4 @@ class DeleteAccountEntityLimit(APIView):
         limit_record.delete()
         return Response({'message': 'Limit record deleted successfully.'}, status=status.HTTP_200_OK)
 
+# MainCurrency views
