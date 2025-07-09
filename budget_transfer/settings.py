@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'budget_management',
     'adjd_transaction',  # Add the new app
     'account_and_entitys',
-    'Admin_Panel'
+    'Admin_Panel',
+    'django_extensions'
 ]
 
 AUTH_USER_MODEL = 'user_management.xx_User'
