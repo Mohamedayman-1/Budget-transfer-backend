@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import XX_Account, XX_Entity, XX_PivotFund, MainCurrency, MainRoutesName
-
+from .models import XX_Account, XX_Entity, XX_PivotFund
 @admin.register(XX_Account)
 class AccountAdmin(admin.ModelAdmin):
     list_display = ('id', 'account', 'parent', 'alias_default')
@@ -19,14 +18,14 @@ class PivotFundAdmin(admin.ModelAdmin):
     list_filter = ('year',)
     search_fields = ('entity__entity', 'account__account')
 
-@admin.register(MainCurrency)
-class MainCurrencyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'icon')
-    search_fields = ('name',)
-    list_filter = ('name',)
+# @admin.register(MainCurrency)
+# class MainCurrencyAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'name', 'icon')
+#     search_fields = ('name',)
+#     list_filter = ('name',)
 
-@admin.register(MainRoutesName)
-class MainRoutesNameAdmin(admin.ModelAdmin):
-    list_display = ('id', 'english_name', 'arabic_name')
-    search_fields = ('english_name', 'arabic_name')
-    list_filter = ('english_name',)
+# @admin.register(MainRoutesName)
+# class MainRoutesNameAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'english_name', 'arabic_name')
+#     search_fields = ('english_name', 'arabic_name')
+#     list_filter = ('english_name',)
