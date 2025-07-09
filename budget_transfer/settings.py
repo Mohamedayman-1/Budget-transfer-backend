@@ -33,8 +33,8 @@ INSTALLED_APPS = [
     'user_management',
     'budget_management',
     'adjd_transaction',  # Add the new app
-    'account_and_entitys',  # Add the new app
-    'django_extensions',
+    'account_and_entitys',
+    'Admin_Panel'
 ]
 
 AUTH_USER_MODEL = 'user_management.xx_User'
