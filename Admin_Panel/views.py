@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit, XX_ACCOUNT_ENTITY_LIMIT, MainCurrency, MainRoutesName
+from .models import  MainCurrency, MainRoutesName
 from .serializers import  MainCurrencySerializer, MainRoutesNameSerializer
 # Create your views here.
 
