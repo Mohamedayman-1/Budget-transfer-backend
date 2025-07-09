@@ -5,8 +5,7 @@ from .views import (
     PivotFundListView, PivotFundCreateView, PivotFundDetailView, PivotFundUpdateView, PivotFundDeleteView,
     AdjdTransactionAuditListView, AdjdTransactionAuditCreateView, AdjdTransactionAuditDetailView, 
     AdjdTransactionAuditUpdateView, AdjdTransactionAuditDeleteView, list_ACCOUNT_ENTITY_LIMIT,UpdateAccountEntityLimit,DeleteAccountEntityLimit,
-    MainCurrencyListView, MainCurrencyCreateView, MainCurrencyDetailView, MainCurrencyUpdateView, MainCurrencyDeleteView,
-    MainRoutesNameListView, MainRoutesNameCreateView, MainRoutesNameDetailView, MainRoutesNameUpdateView, MainRoutesNameDeleteView
+   
 )
 
 urlpatterns = [
