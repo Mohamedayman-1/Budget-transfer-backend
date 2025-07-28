@@ -28,6 +28,18 @@ class ChangePasswordView(APIView):
             return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class RefreshTokenView(APIView):
+    """Refresh JWT token"""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        refresh = RefreshToken(request.data.get('refresh'))
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)
+        }, status=status.HTTP_200_OK)
 
 class RegisterView(APIView):
     """Register a new user"""

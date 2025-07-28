@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ChangePasswordView, RegisterView, LoginView, TokenExpiredView, ListUsersView, UpdateUserPermissionView, UserLevelListView, UserLevelCreateView, UpdateUserLevelView, UserUpdateView, UserDeleteView, UserLevelUpdateView, UserLevelDeleteView
+from .views import ChangePasswordView, RegisterView, LoginView, TokenExpiredView, ListUsersView, UpdateUserPermissionView, UserLevelListView, UserLevelCreateView, UpdateUserLevelView, UserUpdateView, UserDeleteView, UserLevelUpdateView, UserLevelDeleteView,RefreshTokenView
 
 app_name = 'user_management'
 
@@ -9,7 +9,11 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("change-password/", ChangePasswordView.as_view(), name="change_password"),
     path("token-expired/", TokenExpiredView.as_view(), name="token-expired"),
+    path("user/token/refresh/", RefreshTokenView.as_view(), name="token_refresh"),
+
     # User management endpoints
+
+
     path("users/", ListUsersView.as_view(), name="list-users"),
     path(
         "users/permission/<int:user_id>/",
