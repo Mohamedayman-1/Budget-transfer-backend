@@ -38,7 +38,7 @@ class RefreshTokenView(APIView):
         refresh= request.data.get('refresh')
         if not refresh:
             return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
-        refresh = RefreshToken.access_token(refresh)
+        refresh = RefreshToken.for_user(user=request.user)
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh)
