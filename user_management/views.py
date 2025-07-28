@@ -35,7 +35,10 @@ class RefreshTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh = RefreshToken(request.data.get('refresh'))
+        refresh= request.data.get('refresh')
+        if not refresh:
+            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
+        refresh = RefreshToken.access_token(refresh)
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh)
