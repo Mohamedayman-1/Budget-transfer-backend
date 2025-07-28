@@ -22,7 +22,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Must contain at least one lowercase letter.")
         if not re.search(r'[0-9]', value):
             raise serializers.ValidationError("Must contain at least one digit.")
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+        if not re.search(r'[!@_#$%^&*(),.?":{}|<>]', value):
             raise serializers.ValidationError("Must contain at least one special character.")
         return value
 
