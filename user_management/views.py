@@ -51,9 +51,11 @@ class RegisterView(APIView):
     """Register a new user"""
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        
+        print("Begin registration process")
         if serializer.is_valid():
+            print("Serializer is valid, proceeding with registration")
             user = serializer.save()
+            print("User registered successfully:", user.username)
             refresh = RefreshToken.for_user(user)
             
             return Response({
@@ -61,7 +63,7 @@ class RegisterView(APIView):
                 'message': 'User registered successfully.',
                 'token': str(refresh.access_token),
             }, status=status.HTTP_201_CREATED)
-            
+        print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class LoginView(APIView):
     """Authenticate a user and return a token"""
