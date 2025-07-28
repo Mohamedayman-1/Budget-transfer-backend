@@ -1,0 +1,61 @@
+<script>
+// Connect to WebSocket for notifications
+function connectWebSocket() {
+    const socket = new WebSocket(`ws://${window.location.host}/ws/notifications/`);
+    
+    socket.onopen = function(e) {
+        console.log('WebSocket connection established');
+    };
+    
+    socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        showNotification(data);
+    };
+    
+    socket.onclose = function(e) {
+        console.log('WebSocket connection closed, reconnecting...');
+        // Try to reconnect after a few seconds
+        setTimeout(connectWebSocket, 3000);
+    };
+    
+    socket.onerror = function(e) {
+        console.error('WebSocket error:', e);
+    };
+    
+    return socket;
+}
+
+// Display a notification to the user
+function showNotification(notification) {
+    // You can customize this based on your UI framework (Bootstrap, etc.)
+    const notifElement = document.createElement('div');
+    notifElement.className = `notification notification-${notification.type || 'info'}`;
+    notifElement.innerHTML = `
+        <div class="notification-content">
+            <p>${notification.message}</p>
+            <small>${new Date(notification.created_at).toLocaleString()}</small>
+        </div>
+        <button class="close-btn">&times;</button>
+    `;
+    
+    // Add to notification container
+    const container = document.getElementById('notification-container');
+    container.appendChild(notifElement);
+    
+    // Auto-remove after a few seconds
+    setTimeout(() => {
+        notifElement.classList.add('fade-out');
+        setTimeout(() => notifElement.remove(), 500);
+    }, 5000);
+    
+    // Add close button functionality
+    notifElement.querySelector('.close-btn').addEventListener('click', () => {
+        notifElement.remove();
+    });
+}
+
+// Initialize when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+});
+</script>

@@ -630,6 +630,21 @@ class AdjdTransactionTransferExcelUploadView(APIView):
 
     def post(self, request):
         # Check if file was uploaded
+
+         # Get transaction_id from the request
+        transaction_id = request.data.get("transaction")
+        transfer = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+
+        if transfer.status != "pending":
+            return Response(
+                {
+                    "message": f'Cannot upload files for transfer with status "{transfer.status}". Only pending transfers can have files uploaded.'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+
         if "file" not in request.FILES:
             return Response(
                 {"error": "No file uploaded", "message": "Please upload an Excel file"},
@@ -651,8 +666,8 @@ class AdjdTransactionTransferExcelUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get transaction_id from the request
-        transaction_id = request.data.get("transaction")
+       
+
         if not transaction_id:
             return Response(
                 {

@@ -321,6 +321,17 @@ class UpdateBudgetTransferView(APIView):
         try:
 
             transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+             # Get transaction_id from the request
+            transaction_id = request.data.get("transaction")
+            transfer = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot upload files for transfer with status "{transfer.status}". Only pending transfers can have files uploaded.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             if not request.user.role == "admin" and transfer.user_id != request.user.id:
 
@@ -598,6 +609,13 @@ class BudgetTransferFileUploadView(APIView):
             # Check if the transfer exists
             transaction_id = request.data.get("transaction_id")
             transfer = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot upload files for transfer with status "{transfer.status}". Only pending transfers can have files uploaded.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Check if any files were provided
             if not request.FILES:
@@ -665,6 +683,13 @@ class DeleteBudgetTransferAttachmentView(APIView):
         try:
             # First, check if the budget transfer exists
             transfer = xx_BudgetTransfer.objects.get(transaction_id=transfer_id)
+            if transfer.status != "pending":
+                return Response(
+                    {
+                        "message": f'Cannot upload files for transfer with status "{transfer.status}". Only pending transfers can have files uploaded.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             # Check if user has permission to modify this transfer
             if not request.user.role == "admin" and transfer.user_id != request.user.id:
