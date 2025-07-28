@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from datetime import timedelta, datetime, timezone as dt_timezone
 from django.utils import timezone
 from .models import xx_User, xx_UserLevel,xx_notification
@@ -31,18 +31,21 @@ class ChangePasswordView(APIView):
     
 
 class RefreshTokenView(APIView):
-    """Refresh JWT token"""
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh= request.data.get('refresh')
-        if not refresh:
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
             return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
-        refresh = RefreshToken.for_user(user=request.user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh)
-        }, status=status.HTTP_200_OK)
+        try:
+            refresh = RefreshToken(refresh_token)
+            access_token = str(refresh.access_token)
+            return Response({
+                'access': access_token,
+                'refresh': str(refresh)
+            }, status=status.HTTP_200_OK)
+        except TokenError:
+            return Response({'error': 'Invalid or expired refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class RegisterView(APIView):
     """Register a new user"""
@@ -73,6 +76,7 @@ class LoginView(APIView):
                 'data': RegisterSerializer(user).data,
                 'message': 'Login successful.',
                 'token': str(refresh.access_token),
+                'refresh': str(refresh),
             })
             
         return Response({'message': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
