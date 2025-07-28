@@ -32,7 +32,7 @@ class ChangePasswordView(APIView):
 
 class RefreshTokenView(APIView):
     """Refresh JWT token"""
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         refresh= request.data.get('refresh')
