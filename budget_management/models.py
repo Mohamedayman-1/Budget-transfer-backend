@@ -1,38 +1,39 @@
 from django.db import models
 from user_management.models import xx_User
+from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField
 
 class xx_BudgetTransfer(models.Model):
     """Model to track budget transfers between users"""
     transaction_id = models.AutoField(primary_key=True)
-    transaction_date = models.CharField(max_length=10)
+    transaction_date = EncryptedCharField(max_length=10)
     amount = models.FloatField()
-    status = models.CharField(max_length=10)
-    requested_by = models.CharField(max_length=10)
+    status = EncryptedCharField(max_length=10)
+    requested_by = EncryptedCharField(max_length=10)
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(null=True, blank=True)
-    description_x = models.TextField(null=True, blank=True)
-    code = models.CharField(max_length=10, null=True, blank=True)
-    gl_posting_status = models.CharField(max_length=10, null=True, blank=True)
-    approvel_1 = models.CharField(max_length=10, null=True, blank=True)
-    approvel_2 = models.CharField(max_length=10, null=True, blank=True)
-    approvel_3 = models.CharField(max_length=10, null=True, blank=True)
-    approvel_4 = models.CharField(max_length=10, null=True, blank=True)
+    notes = EncryptedTextField(null=True, blank=True)
+    description_x = EncryptedTextField(null=True, blank=True)
+    code = EncryptedCharField(max_length=10, null=True, blank=True)
+    gl_posting_status = EncryptedCharField(max_length=10, null=True, blank=True)
+    approvel_1 = EncryptedCharField(max_length=10, null=True, blank=True)
+    approvel_2 = EncryptedCharField(max_length=10, null=True, blank=True)
+    approvel_3 = EncryptedCharField(max_length=10, null=True, blank=True)
+    approvel_4 = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_1_date = models.DateTimeField(null=True, blank=True)
     approvel_2_date = models.DateTimeField(null=True, blank=True)
     approvel_3_date = models.DateTimeField(null=True, blank=True)
     approvel_4_date = models.DateTimeField(null=True, blank=True)
     status_level = models.IntegerField(default=1)
-    attachment = models.CharField(max_length=10, null=True, blank=True,default="No")
-    fy = models.CharField(max_length=10, null=True, blank=True)
+    attachment = EncryptedCharField(max_length=10, null=True, blank=True,default="No")
+    fy = EncryptedCharField(max_length=10, null=True, blank=True)
     group_id = models.IntegerField(null=True, blank=True)
     interface_id = models.IntegerField(null=True, blank=True)
     reject_group_id = models.IntegerField(null=True, blank=True)
     reject_interface_id = models.IntegerField(null=True, blank=True)
     approve_group_id = models.IntegerField(null=True, blank=True)
     approve_interface_id = models.IntegerField(null=True, blank=True)
-    report = models.CharField(max_length=10, null=True, blank=True)  # This one is already small
-    type = models.CharField(max_length=10, null=True, blank=True)
+    report = EncryptedCharField(max_length=10, null=True, blank=True)  # This one is already small
+    type = EncryptedCharField(max_length=10, null=True, blank=True)
     
     class Meta:
         db_table = 'XX_BUDGET_TRANSFER'
@@ -50,8 +51,8 @@ class xx_BudgetTransferAttachment(models.Model):
         related_name='attachments',
         db_column='transaction_id'
     )
-    file_name = models.CharField(max_length=255)
-    file_type = models.CharField(max_length=100)
+    file_name = EncryptedCharField(max_length=255)
+    file_type = EncryptedCharField(max_length=100)
     file_size = models.IntegerField()
     file_data = models.BinaryField()  # This will store the BLOB data
     upload_date = models.DateTimeField(auto_now_add=True)
@@ -70,11 +71,11 @@ class xx_BudgetTransferRejectReason(models.Model):
         on_delete=models.CASCADE,
         related_name='reject_reasons'
     )
-    reason_text = models.TextField(null=True, blank=True)
+    reason_text = EncryptedTextField(null=True, blank=True)
 
     reject_date = models.DateTimeField(auto_now_add=True)
 
-    reject_by = models.CharField(max_length=25, null=False, blank=True)
+    reject_by = EncryptedCharField(max_length=25, null=False, blank=True)
 
 
     class Meta:

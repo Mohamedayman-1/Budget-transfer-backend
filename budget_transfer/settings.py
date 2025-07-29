@@ -59,24 +59,7 @@ CHANNEL_LAYERS = {
 
 
 
-
-# Add database logging to see what SQL queries are being executed
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django.db.backends': {
-#             'handlers': ['console'],
-#             'level': 'DEBUG',
-#             'propagate': False,
-#         },
-#     },
-# }
+FIELD_ENCRYPTION_KEY = 'G2g9Xb8qH-SZs-So5QEK1EXmf_lUqHuvdgFnitEtRB0='
 
 
 MIDDLEWARE = [
