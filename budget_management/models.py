@@ -2,6 +2,7 @@ from django.db import models
 from user_management.models import xx_User
 from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField
 
+
 class xx_BudgetTransfer(models.Model):
     """Model to track budget transfers between users"""
     transaction_id = models.AutoField(primary_key=True)

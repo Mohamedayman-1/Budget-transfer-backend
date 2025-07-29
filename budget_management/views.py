@@ -65,11 +65,14 @@ class CreateBudgetTransferView(APIView):
         else:
 
             prefix = "FAR-"
+            
 
-        transfer=xx_BudgetTransfer.objects.all()
-        transfer = transfer.annotate(code_str=Cast("code", CharField(max_length=10)))
-
-        last_transfer = transfer.filter(code_str__startswith=prefix).order_by("-code_str").first()
+        last_transfer = (
+                xx_BudgetTransfer.objects
+                .filter(code__startswith=prefix)
+                .order_by("-code")
+                .first()
+            )
 
         if last_transfer and last_transfer.code:
             try:
@@ -130,10 +133,10 @@ class ListBudgetTransferView(APIView):
         else:
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
         if code:
-            transfers = transfers.annotate(
-                code_str=Cast('code', output_field=CharField(max_length=10))
-            )
-            transfers.filter(code_str__icontains=code)
+            # transfers = transfers.annotate(
+            #     code_str=Cast('code', output_field=CharField(max_length=10))
+            # )
+            transfers = transfers.filter(code__icontains=code)
         # if date:
         #     transfers = transfers.filter(transaction_date=search)
         # if start_date and end_date:
