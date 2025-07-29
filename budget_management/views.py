@@ -141,31 +141,31 @@ class ListBudgetTransferView(APIView):
                 code_str=Cast('code', output_field=CharField(max_length=10))
             ).filter(code_str__icontains=code)
 
-        if date:
+        # if date:
 
-            transfers = transfers.filter(transaction_date=search)
+        #     transfers = transfers.filter(transaction_date=search)
 
-        if start_date and end_date:
-            transfers = transfers.filter(
-                request_date__gte=start_date, request_date__lte=end_date
-            )
+        # if start_date and end_date:
+        #     transfers = transfers.filter(
+        #         request_date__gte=start_date, request_date__lte=end_date
+        #     )
 
-        elif start_date:
+        # elif start_date:
 
-            transfers = transfers.filter(request_date__gte=start_date)
+        #     transfers = transfers.filter(request_date__gte=start_date)
 
-        elif end_date:
+        # elif end_date:
 
-            transfers = transfers.filter(request_date__lte=end_date)
+        #     transfers = transfers.filter(request_date__lte=end_date)
 
-        if search:
-            transfers = transfers.filter(
-                Q(requested_by__icontains=search)
-                | Q(code__icontains=search)
-                | Q(transaction_date__icontains=search)
-                | Q(amount__icontains=search)
-                | Q(status__icontains=search)
-            )
+        # if search:
+        #     transfers = transfers.filter(
+        #         Q(requested_by__icontains=search)
+        #         | Q(code__icontains=search)
+        #         | Q(transaction_date__icontains=search)
+        #         | Q(amount__icontains=search)
+        #         | Q(status__icontains=search)
+        #     )
 
         transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
