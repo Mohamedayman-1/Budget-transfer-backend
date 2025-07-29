@@ -66,9 +66,12 @@ class CreateBudgetTransferView(APIView):
 
             prefix = "FAR-"
 
+        xx_BudgetTransfer.objects.annotate
+
         last_transfer = (
-                xx_BudgetTransfer.objects
-                .annotate(code_str=Cast("code", CharField()))
+               xx_BudgetTransfer.objects
+                .annotate(code_str=Cast("code", CharField(max_length=10)))
+
                 .filter(code_str__startswith=prefix)
                 .order_by("-code_str")
                 .first()
