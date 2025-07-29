@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from datetime import timedelta, datetime, timezone as dt_timezone
 from django.utils import timezone
+
+from Admin_Panel import serializers
 from .models import xx_User, xx_UserLevel,xx_notification
 from .serializers import ChangePasswordSerializer, NotificationSerializer, RegisterSerializer, LoginSerializer, UserLevelSerializer
 from .permissions import IsAdmin
@@ -95,12 +97,18 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
-        
+        old_password = request.data.get("old_password", None)
+        new_password = request.data.get("new_password", None)
+        print("Old password:", old_password)
+        print("New password:", new_password)
+        try:
+            serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+        except serializers.ValidationError as e:
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 

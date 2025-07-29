@@ -2,39 +2,38 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import xx_User as User, xx_UserLevel, xx_notification as Notification
 import re
-from rest_framework.response import Response
-from rest_framework import status
-
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
 
-
-    Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
-
     def validate_old_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
-            return   Response({'message': serializers.ValidationError("Old password is incorrect.")}, status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError("Old password is incorrect.")
         return value
 
     def validate_new_password(self, value):
         # Reuse your strong password validation
+        array_of_errors=[]
         if len(value) < 8:
-            return  Response({'message': serializers.ValidationError("Password must be at least 8 characters long.")}, status=status.HTTP_400_BAD_REQUEST)
-        
+            array_of_errors.append("Password must be at least 8 characters long.")
         if not re.search(r'[A-Z]', value):
-            return  Response({'message': serializers.ValidationError("Must contain at least one uppercase letter.")}, status=status.HTTP_400_BAD_REQUEST)
+            array_of_errors.append("Must contain at least one uppercase letter.")
         if not re.search(r'[a-z]', value):
-            return  Response({'message': serializers.ValidationError("Must contain at least one lowercase letter.")}, status=status.HTTP_400_BAD_REQUEST)
+            array_of_errors.append("Must contain at least one lowercase letter.")
         if not re.search(r'[0-9]', value):
-            return  Response({'message': serializers.ValidationError("Must contain at least one digit.")}, status=status.HTTP_400_BAD_REQUEST)
+            array_of_errors.append("Must contain at least one digit.")
         if not re.search(r'[!@_#$%^&*(),.?":{}|<>]', value):
-            return  Response({'message': serializers.ValidationError("Must contain at least one special character.")}, status=status.HTTP_400_BAD_REQUEST)
+            array_of_errors.append("Must contain at least one special character.")
+
+        if array_of_errors:
+            raise serializers.ValidationError(array_of_errors)
+
         return value
 
     def save(self, **kwargs):
         user = self.context['request'].user
+        self.validated_data['old_password']
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
