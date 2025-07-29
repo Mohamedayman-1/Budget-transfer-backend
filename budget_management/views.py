@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db.models import Q, Sum
-
+from django.db.models.functions import Cast
+from django.db.models import CharField
 from user_management.models import xx_notification
 from .models import (
     xx_BudgetTransfer,
@@ -66,10 +67,12 @@ class CreateBudgetTransferView(APIView):
             prefix = "FAR-"
 
         last_transfer = (
-            xx_BudgetTransfer.objects.filter(code__startswith=prefix)
-            .order_by("-code")
-            .first()
-        )
+                xx_BudgetTransfer.objects
+                .annotate(code_str=Cast("code", CharField()))
+                .filter(code_str__startswith=prefix)
+                .order_by("-code_str")
+                .first()
+            )
 
         if last_transfer and last_transfer.code:
             try:
