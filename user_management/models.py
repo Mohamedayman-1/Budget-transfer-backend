@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField,EncryptedDateTimeField,EncryptedIntegerField, EncryptedBooleanField
 
 class xx_UserManager(BaseUserManager):
     def create_user(self, username, password=None, role='user', user_level=None):
@@ -46,10 +47,10 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
     """Custom user model with roles for admin and regular users"""
     ROLE_CHOICES = (('admin', 'Admin'), ('user', 'User'))
     username = models.CharField(max_length=255, unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    can_transfer_budget = models.BooleanField(default=False)  # Permission specific to this app
+    role = EncryptedCharField(max_length=10, choices=ROLE_CHOICES)
+    is_active = EncryptedBooleanField(default=True)
+    is_staff = EncryptedBooleanField(default=False)
+    can_transfer_budget = EncryptedBooleanField(default=False)  # Permission specific to this app
     user_level = models.ForeignKey(
         'xx_UserLevel',
         on_delete=models.SET_NULL,
@@ -79,7 +80,7 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
 class xx_UserLevel(models.Model):
     """Model to represent user levels/roles in the system."""
     name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(null=True, blank=True)
+    description = EncryptedTextField(null=True, blank=True)
     level_order = models.PositiveIntegerField(default=1, help_text="Order of the level for hierarchy")
 
     class Meta:
@@ -92,7 +93,7 @@ class xx_UserLevel(models.Model):
 class xx_notification(models.Model):
     """Model to represent notifications for users."""
     user = models.ForeignKey(xx_User, on_delete=models.CASCADE, related_name='notifications')
-    message = models.TextField()
+    message = EncryptedTextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     is_system_read = models.BooleanField(default=False)  # For tracking if the notification was read on the OS system

@@ -26,7 +26,7 @@ class xx_BudgetTransfer(models.Model):
     approvel_4_date = EncryptedDateTimeField(null=True, blank=True)
     status_level = models.IntegerField(default=1)
     attachment = EncryptedCharField(max_length=10, null=True, blank=True,default="No")
-    fy = EncryptedIntegerField(max_length=10, null=True, blank=True)
+    fy = EncryptedIntegerField(null=True, blank=True)
     group_id = models.IntegerField(null=True, blank=True)
     interface_id = models.IntegerField(null=True, blank=True)
     reject_group_id = models.IntegerField(null=True, blank=True)

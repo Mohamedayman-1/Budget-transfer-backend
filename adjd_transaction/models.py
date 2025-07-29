@@ -1,6 +1,6 @@
 from django.db import models
 from budget_management.models import xx_BudgetTransfer
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField, EncryptedBooleanField, EncryptedFileField
+from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField, EncryptedBooleanField
 
 class xx_AdjdTransactionTransfer(models.Model):
     """Model for ADJD transaction transfers"""
