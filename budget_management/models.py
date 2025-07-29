@@ -11,8 +11,8 @@ class xx_BudgetTransfer(models.Model):
     requested_by = EncryptedCharField(max_length=10)
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
-    notes = EncryptedTextField(null=True, blank=True)
-    description_x = EncryptedTextField(null=True, blank=True)
+    notes = EncryptedCharField(max_length=500,null=True, blank=True)
+    description_x = EncryptedCharField(max_length=500,null=True, blank=True)
     code = EncryptedCharField(max_length=10, null=True, blank=True)
     gl_posting_status = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_1 = EncryptedCharField(max_length=10, null=True, blank=True)
@@ -71,7 +71,7 @@ class xx_BudgetTransferRejectReason(models.Model):
         on_delete=models.CASCADE,
         related_name='reject_reasons'
     )
-    reason_text = EncryptedTextField(null=True, blank=True)
+    reason_text = EncryptedCharField(max_length=500,null=True, blank=True)
 
     reject_date = models.DateTimeField(auto_now_add=True)
 
