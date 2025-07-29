@@ -1,10 +1,10 @@
 from django.db import models
-
+from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField,EncryptedBooleanField
 class XX_Account(models.Model):
     """Model representing ADJD accounts"""
     account = models.CharField(max_length=255, unique=True)
-    parent = models.CharField(max_length=50, null=True, blank=True)
-    alias_default = models.CharField(max_length=255, null=True, blank=True)
+    parent = EncryptedCharField(max_length=50, null=True, blank=True)
+    alias_default = EncryptedCharField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return self.account
@@ -15,9 +15,9 @@ class XX_Account(models.Model):
 class XX_Entity(models.Model):
     """Model representing ADJD entities"""
     entity = models.CharField(max_length=50)
-    parent = models.CharField(max_length=50, null=True, blank=True)
-    alias_default = models.CharField(max_length=255, null=True, blank=True)
-    
+    parent = EncryptedCharField(max_length=50, null=True, blank=True)
+    alias_default = EncryptedCharField(max_length=255, null=True, blank=True)
+
     def __str__(self):
         return self.entity
     
@@ -30,10 +30,10 @@ class XX_PivotFund(models.Model):
     entity = models.CharField(max_length=50)
     account = models.CharField(max_length=50)
     year = models.IntegerField()
-    actual = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    fund = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    budget = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    encumbrance = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    actual = EncryptedCharField( null=True, blank=True)
+    fund = EncryptedCharField( null=True, blank=True)
+    budget = EncryptedCharField( null=True, blank=True)
+    encumbrance = EncryptedCharField( null=True, blank=True)
 
 
     class Meta:
@@ -66,11 +66,11 @@ class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
     id = models.AutoField(primary_key=True)
     account_id = models.CharField(max_length=255)
     entity_id = models.CharField(max_length=255)
-    is_transer_allowed_for_source = models.CharField(max_length=255, null=True, blank=True)
-    is_transer_allowed_for_target = models.CharField(max_length=255, null=True, blank=True)
-    is_transer_allowed = models.CharField(max_length=255, null=True, blank=True)
-    source_count = models.IntegerField(null=True, blank=True)   
-    target_count = models.IntegerField(null=True, blank=True)
+    is_transer_allowed_for_source = EncryptedBooleanField(null=True, blank=True)
+    is_transer_allowed_for_target = EncryptedBooleanField(null=True, blank=True)
+    is_transer_allowed = EncryptedBooleanField(null=True, blank=True)
+    source_count = EncryptedIntegerField(null=True, blank=True)
+    target_count = EncryptedIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Account Entity Limit {self.id}" 

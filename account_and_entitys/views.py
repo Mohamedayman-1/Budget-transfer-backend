@@ -382,108 +382,108 @@ class PivotFundDeleteView(APIView):
     
 # ADJD Transaction Audit views 
 
-class AdjdTransactionAuditListView(APIView):
-    """List all ADJD transaction audit records"""
-    permission_classes = [IsAuthenticated]
-    pagination_class = EntityPagination
+# class AdjdTransactionAuditListView(APIView):
+#     """List all ADJD transaction audit records"""
+#     permission_classes = [IsAuthenticated]
+#     pagination_class = EntityPagination
     
-    def get(self, request):
-        audit_records = XX_TransactionAudit.objects.all().order_by('-id')
+#     def get(self, request):
+#         audit_records = XX_TransactionAudit.objects.all().order_by('-id')
         
-        # Handle pagination
-        paginator = self.pagination_class()
-        paginated_records = paginator.paginate_queryset(audit_records, request)
-        serializer = TransactionAuditSerializer(paginated_records, many=True)
+#         # Handle pagination
+#         paginator = self.pagination_class()
+#         paginated_records = paginator.paginate_queryset(audit_records, request)
+#         serializer = TransactionAuditSerializer(paginated_records, many=True)
         
-        return paginator.get_paginated_response(serializer.data)
+#         return paginator.get_paginated_response(serializer.data)
 
-class AdjdTransactionAuditCreateView(APIView):
-    """Create a new ADJD transaction audit record"""
-    permission_classes = [IsAuthenticated]
+# class AdjdTransactionAuditCreateView(APIView):
+#     """Create a new ADJD transaction audit record"""
+#     permission_classes = [IsAuthenticated]
     
-    def post(self, request):
-        serializer = TransactionAuditSerializer(data=request.data)
-        if serializer.is_valid():
-            audit_record = serializer.save()
-            return Response({
-                'message': 'Audit record created successfully.',
-                'data': TransactionAuditSerializer(audit_record).data
-            }, status=status.HTTP_201_CREATED)
-        return Response({
-            'message': 'Failed to create audit record.',
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+#     def post(self, request):
+#         serializer = TransactionAuditSerializer(data=request.data)
+#         if serializer.is_valid():
+#             audit_record = serializer.save()
+#             return Response({
+#                 'message': 'Audit record created successfully.',
+#                 'data': TransactionAuditSerializer(audit_record).data
+#             }, status=status.HTTP_201_CREATED)
+#         return Response({
+#             'message': 'Failed to create audit record.',
+#             'errors': serializer.errors
+#         }, status=status.HTTP_400_BAD_REQUEST)
 
-class AdjdTransactionAuditDetailView(APIView):
-    """Retrieve a specific ADJD transaction audit record"""
-    permission_classes = [IsAuthenticated]
+# class AdjdTransactionAuditDetailView(APIView):
+#     """Retrieve a specific ADJD transaction audit record"""
+#     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk):
-        try:
-            return XX_TransactionAudit.objects.get(pk=pk)
-        except XX_TransactionAudit.DoesNotExist:
-            return None
+#     def get_object(self, pk):
+#         try:
+#             return XX_TransactionAudit.objects.get(pk=pk)
+#         except XX_TransactionAudit.DoesNotExist:
+#             return None
     
-    def get(self, request, pk):
-        audit_record = self.get_object(pk)
-        if audit_record is None:
-            return Response({
-                'message': 'Audit record not found.'
-            }, status=status.HTTP_404_NOT_FOUND)
-        serializer = TransactionAuditSerializer(audit_record)
-        return Response({
-            'message': 'Audit record details retrieved successfully.',
-            'data': serializer.data
-        })
+#     def get(self, request, pk):
+#         audit_record = self.get_object(pk)
+#         if audit_record is None:
+#             return Response({
+#                 'message': 'Audit record not found.'
+#             }, status=status.HTTP_404_NOT_FOUND)
+#         serializer = TransactionAuditSerializer(audit_record)
+#         return Response({
+#             'message': 'Audit record details retrieved successfully.',
+#             'data': serializer.data
+#         })
 
-class AdjdTransactionAuditUpdateView(APIView):
-    """Update a specific ADJD transaction audit record"""
-    permission_classes = [IsAuthenticated]
+# class AdjdTransactionAuditUpdateView(APIView):
+#     """Update a specific ADJD transaction audit record"""
+#     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk):
-        try:
-            return XX_TransactionAudit.objects.get(pk=pk)
-        except XX_TransactionAudit.DoesNotExist:
-            return None
+#     def get_object(self, pk):
+#         try:
+#             return XX_TransactionAudit.objects.get(pk=pk)
+#         except XX_TransactionAudit.DoesNotExist:
+#             return None
     
-    def put(self, request, pk):
-        audit_record = self.get_object(pk)
-        if audit_record is None:
-            return Response({
-                'message': 'Audit record not found.'
-            }, status=status.HTTP_404_NOT_FOUND)
-        serializer = TransactionAuditSerializer(audit_record, data=request.data)
-        if serializer.is_valid():
-            updated_record = serializer.save()
-            return Response({
-                'message': 'Audit record updated successfully.',
-                'data': TransactionAuditSerializer(updated_record).data
-            })
-        return Response({
-            'message': 'Failed to update audit record.',
-            'errors': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
+#     def put(self, request, pk):
+#         audit_record = self.get_object(pk)
+#         if audit_record is None:
+#             return Response({
+#                 'message': 'Audit record not found.'
+#             }, status=status.HTTP_404_NOT_FOUND)
+#         serializer = TransactionAuditSerializer(audit_record, data=request.data)
+#         if serializer.is_valid():
+#             updated_record = serializer.save()
+#             return Response({
+#                 'message': 'Audit record updated successfully.',
+#                 'data': TransactionAuditSerializer(updated_record).data
+#             })
+#         return Response({
+#             'message': 'Failed to update audit record.',
+#             'errors': serializer.errors
+#         }, status=status.HTTP_400_BAD_REQUEST)
 
-class AdjdTransactionAuditDeleteView(APIView):
-    """Delete a specific ADJD transaction audit record"""
-    permission_classes = [IsAuthenticated]
+# class AdjdTransactionAuditDeleteView(APIView):
+#     """Delete a specific ADJD transaction audit record"""
+#     permission_classes = [IsAuthenticated]
     
-    def get_object(self, pk):
-        try:
-            return XX_TransactionAudit.objects.get(pk=pk)
-        except XX_TransactionAudit.DoesNotExist:
-            return None
+#     def get_object(self, pk):
+#         try:
+#             return XX_TransactionAudit.objects.get(pk=pk)
+#         except XX_TransactionAudit.DoesNotExist:
+#             return None
     
-    def delete(self, request, pk):
-        audit_record = self.get_object(pk)
-        if audit_record is None:
-            return Response({
-                'message': 'Audit record not found.'
-            }, status=status.HTTP_404_NOT_FOUND)
-        audit_record.delete()
-        return Response({
-            'message': 'Audit record deleted successfully.'
-        }, status=status.HTTP_200_OK)
+#     def delete(self, request, pk):
+#         audit_record = self.get_object(pk)
+#         if audit_record is None:
+#             return Response({
+#                 'message': 'Audit record not found.'
+#             }, status=status.HTTP_404_NOT_FOUND)
+#         audit_record.delete()
+#         return Response({
+#             'message': 'Audit record deleted successfully.'
+#         }, status=status.HTTP_200_OK)
 
 class list_ACCOUNT_ENTITY_LIMIT(APIView):
     """List all ADJD transaction audit records"""
@@ -504,6 +504,7 @@ class list_ACCOUNT_ENTITY_LIMIT(APIView):
         serializer = AccountEntityLimitSerializer(paginated_records, many=True)
 
         data = [
+            
             {
                 'id': record["id"],
                 'account': record["account_id"],
