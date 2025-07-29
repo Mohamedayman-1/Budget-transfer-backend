@@ -12,7 +12,7 @@ class xx_BudgetTransfer(models.Model):
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
     notes = EncryptedCharField(max_length=500,null=True, blank=True)
-    # description_x = EncryptedCharField(max_length=500,null=True, blank=True)
+    description_x = models.TextField(max_length=500,null=True, blank=True)
     code = EncryptedCharField(max_length=10, null=True, blank=True)
     gl_posting_status = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_1 = EncryptedCharField(max_length=10, null=True, blank=True)
