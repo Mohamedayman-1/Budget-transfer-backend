@@ -135,7 +135,8 @@ class ListBudgetTransferView(APIView):
         if code:
             transfers = transfers.annotate(
                 code_str=Cast('code', output_field=CharField(max_length=10))
-            ).filter(code_str__icontains=code)
+            )
+            transfers.filter(code_str__icontains=code)
         # if date:
         #     transfers = transfers.filter(transaction_date=search)
         # if start_date and end_date:
