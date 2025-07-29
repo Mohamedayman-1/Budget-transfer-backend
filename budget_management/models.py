@@ -1,32 +1,32 @@
+from pyexpat import model
 from django.db import models
 from user_management.models import xx_User
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField
+from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField,EncryptedDateTimeField,EncryptedIntegerField
 
 
 class xx_BudgetTransfer(models.Model):
     """Model to track budget transfers between users"""
     transaction_id = models.AutoField(primary_key=True)
     transaction_date = EncryptedCharField(max_length=10)
-    amount = models.FloatField()
+    amount = EncryptedCharField(max_length=255)
     status = EncryptedCharField(max_length=10)
     requested_by = EncryptedCharField(max_length=10)
     user_id = models.IntegerField(null=True, blank=True)
-    request_date = models.DateTimeField(auto_now_add=True)
+    request_date = EncryptedDateTimeField(auto_now_add=True)
     notes = EncryptedCharField(max_length=500,null=True, blank=True)
-    description_x = models.TextField(max_length=500,null=True, blank=True)
-    code = EncryptedCharField(max_length=10, null=True, blank=True)
+    code = models.CharField(max_length=10, null=True, blank=True)
     gl_posting_status = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_1 = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_2 = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_3 = EncryptedCharField(max_length=10, null=True, blank=True)
     approvel_4 = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_1_date = models.DateTimeField(null=True, blank=True)
-    approvel_2_date = models.DateTimeField(null=True, blank=True)
-    approvel_3_date = models.DateTimeField(null=True, blank=True)
-    approvel_4_date = models.DateTimeField(null=True, blank=True)
+    approvel_1_date = EncryptedDateTimeField(null=True, blank=True)
+    approvel_2_date = EncryptedDateTimeField(null=True, blank=True)
+    approvel_3_date = EncryptedDateTimeField(null=True, blank=True)
+    approvel_4_date = EncryptedDateTimeField(null=True, blank=True)
     status_level = models.IntegerField(default=1)
     attachment = EncryptedCharField(max_length=10, null=True, blank=True,default="No")
-    fy = EncryptedCharField(max_length=10, null=True, blank=True)
+    fy = EncryptedIntegerField(max_length=10, null=True, blank=True)
     group_id = models.IntegerField(null=True, blank=True)
     interface_id = models.IntegerField(null=True, blank=True)
     reject_group_id = models.IntegerField(null=True, blank=True)
@@ -74,7 +74,7 @@ class xx_BudgetTransferRejectReason(models.Model):
     )
     reason_text = EncryptedCharField(max_length=500,null=True, blank=True)
 
-    reject_date = models.DateTimeField(auto_now_add=True)
+    reject_date = EncryptedDateTimeField(auto_now_add=True)
 
     reject_by = EncryptedCharField(max_length=25, null=False, blank=True)
 

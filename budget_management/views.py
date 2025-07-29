@@ -76,7 +76,6 @@ class CreateBudgetTransferView(APIView):
 
         if last_transfer and last_transfer.code:
             try:
-
                 last_num = int(last_transfer.code.replace(prefix, ""))
                 new_num = last_num + 1
             except (ValueError, AttributeError):
@@ -137,24 +136,7 @@ class ListBudgetTransferView(APIView):
             #     code_str=Cast('code', output_field=CharField(max_length=10))
             # )
             transfers = transfers.filter(code__icontains=code)
-        # if date:
-        #     transfers = transfers.filter(transaction_date=search)
-        # if start_date and end_date:
-        #     transfers = transfers.filter(
-        #         request_date__gte=start_date, request_date__lte=end_date
-        #     )
-        # elif start_date:
-        #     transfers = transfers.filter(request_date__gte=start_date)
-        # elif end_date:
-        #     transfers = transfers.filter(request_date__lte=end_date)
-        # if search:
-        #     transfers = transfers.filter(
-        #         Q(requested_by__icontains=search)
-        #         | Q(code__icontains=search)
-        #         | Q(transaction_date__icontains=search)
-        #         | Q(amount__icontains=search)
-        #         | Q(status__icontains=search)
-        #     )
+
         transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
         paginated_transfers = paginator.paginate_queryset(transfers, request)
@@ -187,17 +169,7 @@ class ListBudgetTransfer_approvels_View(APIView):
         if code:
             transfers = transfers.filter(code__icontains=code)
 
-        if date:
-            transfers = transfers.filter(transaction_date=date)
 
-        if start_date and end_date:
-            transfers = transfers.filter(
-                request_date__gte=start_date, request_date__lte=end_date
-            )
-        elif start_date:
-            transfers = transfers.filter(request_date__gte=start_date)
-        elif end_date:
-            transfers = transfers.filter(request_date__lte=end_date)
 
         transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
