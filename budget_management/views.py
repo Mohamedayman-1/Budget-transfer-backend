@@ -129,35 +129,23 @@ class ListBudgetTransferView(APIView):
         search = request.data.get("search")
 
         if request.user.role == "admin":
-
             transfers = xx_BudgetTransfer.objects.all()
-
         else:
-
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
-
         if code:
             transfers = transfers.annotate(
                 code_str=Cast('code', output_field=CharField(max_length=10))
             ).filter(code_str__icontains=code)
-
         # if date:
-
         #     transfers = transfers.filter(transaction_date=search)
-
         # if start_date and end_date:
         #     transfers = transfers.filter(
         #         request_date__gte=start_date, request_date__lte=end_date
         #     )
-
         # elif start_date:
-
         #     transfers = transfers.filter(request_date__gte=start_date)
-
         # elif end_date:
-
         #     transfers = transfers.filter(request_date__lte=end_date)
-
         # if search:
         #     transfers = transfers.filter(
         #         Q(requested_by__icontains=search)
@@ -166,12 +154,10 @@ class ListBudgetTransferView(APIView):
         #         | Q(amount__icontains=search)
         #         | Q(status__icontains=search)
         #     )
-
         transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
         paginated_transfers = paginator.paginate_queryset(transfers, request)
         serializer = BudgetTransferSerializer(paginated_transfers, many=True)
-
         return paginator.get_paginated_response(serializer.data)
 
 
