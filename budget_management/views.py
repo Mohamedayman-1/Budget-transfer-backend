@@ -66,16 +66,10 @@ class CreateBudgetTransferView(APIView):
 
             prefix = "FAR-"
 
-        xx_BudgetTransfer.objects.annotate
+        transfer=xx_BudgetTransfer.objects.all()
+        transfer = transfer.annotate(code_str=Cast("code", CharField(max_length=10)))
 
-        last_transfer = (
-               xx_BudgetTransfer.objects
-                .annotate(code_str=Cast("code", CharField(max_length=10)))
-
-                .filter(code_str__startswith=prefix)
-                .order_by("-code_str")
-                .first()
-            )
+        last_transfer = transfer.filter(code_str__startswith=prefix).order_by("-code_str").first()
 
         if last_transfer and last_transfer.code:
             try:
