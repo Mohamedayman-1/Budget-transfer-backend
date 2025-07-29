@@ -30,10 +30,10 @@ class XX_PivotFund(models.Model):
     entity = models.CharField(max_length=50)
     account = models.CharField(max_length=50)
     year = models.IntegerField()
-    actual = EncryptedCharField( null=True, blank=True)
-    fund = EncryptedCharField( null=True, blank=True)
-    budget = EncryptedCharField( null=True, blank=True)
-    encumbrance = EncryptedCharField( null=True, blank=True)
+    actual = EncryptedCharField(max_length=255, null=True, blank=True)
+    fund = EncryptedCharField( max_length=255, null=True, blank=True)
+    budget = EncryptedCharField(max_length=255,  null=True, blank=True)
+    encumbrance = EncryptedCharField( max_length=255, null=True, blank=True)
 
 
     class Meta:
