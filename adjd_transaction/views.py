@@ -344,12 +344,16 @@ class AdjdTransactionTransferListView(APIView):
                 {"summary": summary, "transfers": response_data, "status": status}
             )
         else:
+            summary = {
+                "transaction_id": transaction_id,
+                "total_transfers": 0,
+                "total_from": 0,
+                "total_to": 0,
+                "balanced": True,
+                "status": status,
+            }
             return Response(
-                {
-                    "error": "No transfers found",
-                    "message": f"No transfers found for transaction ID: {transaction_id}",
-                },
-                status=rest_framework.status.HTTP_404_NOT_FOUND,
+                {"summary": summary, "transfers": response_data, "status": status}
             )
 
 
