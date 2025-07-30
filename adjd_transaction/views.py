@@ -34,6 +34,19 @@ def validate_adjd_transaction(data, code=None):
         "cost_center_code",
         "account_code",
     ]
+    if data["from_center"]=='':
+        data["from_center"] = 0
+    if data["to_center"]=='':
+        data["to_center"] = 0
+    if data["approved_budget"]=='':
+        data["approved_budget"] = 0
+    if data["available_budget"]=='':
+        data["available_budget"] = 0
+    if data["encumbrance"]=='':
+        data["encumbrance"] = 0
+    if data["actual"]=='':
+        data["actual"] = 0
+
 
     for field in required_fields:
         if field not in data or data[field] is None:
@@ -42,24 +55,25 @@ def validate_adjd_transaction(data, code=None):
     # If basic required fields are missing, stop further validation
     if errors:
         return errors
+    
 
     # Validation 2: from_center or to_center must be positive
-    if code != "AFR":
-        if Decimal(str(data["from_center"])) < 0:
+    if code[0:3] != "AFR":
+        if Decimal(data["from_center"]) < 0:
             errors.append("from amount must be positive")
 
-        if Decimal(str(data["to_center"])) < 0:
+        if Decimal(data["to_center"]) < 0:
             errors.append("to amount must be positive")
 
     # Validation 3: Check if both from_center and to_center are positive
 
-    if Decimal(str(data["from_center"])) > 0 and Decimal(str(data["to_center"])) > 0:
+    if Decimal(data["from_center"]) > 0 and Decimal(data["to_center"]) > 0:
 
         errors.append("Can't have value in both from and to at the same time")
 
     # Validation 4: Check if actual  > from_center
-    if code != "AFR":
-        if Decimal(str(data["from_center"])) > Decimal(str(data["actual"])):
+    if code[0:3] != "AFR":
+        if Decimal(data["from_center"]) > Decimal(data["actual"]):
             errors.append(" from value must be less or equal actual value")
 
     # Validation 5: Check for duplicate transfers (same transaction, from_account, to_account)
@@ -234,8 +248,8 @@ class AdjdTransactionTransferListView(APIView):
                 status=rest_framework.status.HTTP_400_BAD_REQUEST,
             )
 
-        transaction = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
-        if not transaction:
+        transaction_object = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+        if not transaction_object:
             return Response(
                 {
                     "error": "transaction not found",
@@ -244,25 +258,25 @@ class AdjdTransactionTransferListView(APIView):
                 status=rest_framework.status.HTTP_404_NOT_FOUND,
             )
         status = False
-        if transaction.code[0:3] != "FAD":
+        if transaction_object.code[0:3] != "FAD":
 
-            if transaction.status_level and transaction.status_level < 1:
+            if transaction_object.status_level and transaction_object.status_level < 1:
                 status = "is rejected"
-            elif transaction.status_level and transaction.status_level == 1:
+            elif transaction_object.status_level and transaction_object.status_level == 1:
                 status = "not yet sent for approval"
-            elif transaction.status_level and transaction.status_level == 4:
+            elif transaction_object.status_level and transaction_object.status_level == 4:
                 status = "approved"
             else:
                 status = "waiting for approval"
         else:
-            if transaction.status_level and transaction.status_level < 1:
+            if transaction_object.status_level and transaction_object.status_level < 1:
                 status = "is rejected"
-            elif transaction.status_level and transaction.status_level == 3:
+            elif transaction_object.status_level and transaction_object.status_level == 3:
                 status = "approved"
-            elif transaction.status_level and transaction.status_level == 1:
+            elif transaction_object.status_level and transaction_object.status_level == 1:
                 status = "not yet sent for approval"
             else:
-                status = "watting for approval"
+                status = "waiting for approval"
 
         transfers = xx_TransactionTransfer.objects.filter(
             transaction=transaction_id
@@ -273,28 +287,37 @@ class AdjdTransactionTransferListView(APIView):
         response_data = []
 
         for transfer_data in serializer.data:
+
+            from_center = transfer_data.get("from_center", 0)
+            to_center = transfer_data.get("to_center", 0)
+            cost_center_code = transfer_data.get("cost_center_code")
+            account_code = transfer_data.get("account_code")
+            transfer_id = transfer_data.get("transfer_id")
+            approved_budget = transfer_data.get("approved_budget", 0)
+            available_budget = transfer_data.get("available_budget", 0)
+            encumbrance = transfer_data.get("encumbrance", 0)
+            actual = transfer_data.get("actual", 0)
+
             # Prepare data for validation function
             validation_data = {
                 "transaction_id": transaction_id,
-                "from_center": transfer_data.get("from_center"),
-                "to_center": transfer_data.get("to_center"),
-                "approved_budget": transfer_data.get("approved_budget"),
-                "available_budget": transfer_data.get("available_budget"),
-                "encumbrance": transfer_data.get("encumbrance"),
-                "actual": transfer_data.get("actual"),
-                "cost_center_code": transfer_data.get("cost_center_code"),
-                "account_code": transfer_data.get("account_code"),
-                "transfer_id": transfer_data.get(
-                    "transfer_id"
-                ),  # Fixed: was using 'transfer_id' instead of 'id'
+                "from_center": from_center,
+                "to_center": to_center,
+                "approved_budget": approved_budget,
+                "available_budget": available_budget,
+                "encumbrance": encumbrance,
+                "actual": actual,
+                "cost_center_code": cost_center_code,
+                "account_code": account_code,
+                "transfer_id": transfer_id,  # Fixed: was using 'transfer_id' instead of 'id'
             }
 
             # Validate the transfer
             validation_errors = validate_adjd_transaction(
-                validation_data, code=transaction.code
+                validation_data, code=transaction_object.code
             )
             validation_errors = validate_adjd_transcation_transfer(
-                validation_data, code=transaction.code, errors=validation_errors
+                validation_data, code=transaction_object.code, errors=validation_errors
             )
             # Add validation results to the transfer data
             transfer_result = transfer_data.copy()
@@ -310,17 +333,18 @@ class AdjdTransactionTransferListView(APIView):
         all_related_transfers = xx_TransactionTransfer.objects.filter(
             transaction=transaction_id
         )
+
         if all_related_transfers.exists():
             from_center_values = all_related_transfers.values_list("from_center", flat=True)
             to_center_values = all_related_transfers.values_list("to_center", flat=True)
-            total_from_center = sum(float(value) for value in from_center_values)
-            total_to_center = sum(float(value) for value in to_center_values)
+            total_from_center = sum(float(value) if value != '' else 0 for value in from_center_values)
+            total_to_center = sum(float(value) if value != '' else 0 for value in to_center_values)
 
             if total_from_center == total_to_center:
-                transaction.amount = total_from_center
-                transaction.save()
+                transaction_object.amount = total_from_center
+                transaction_object.save()
 
-            if transaction.code[0:3] == "AFR":
+            if transaction_object.code[0:3] == "AFR":
                 summary = {
                     "transaction_id": transaction_id,
                     "total_transfers": len(response_data),
