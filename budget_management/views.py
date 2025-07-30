@@ -137,7 +137,7 @@ class ListBudgetTransferView(APIView):
             # )
             transfers = transfers.filter(code__icontains=code)
 
-        transfers = transfers.order_by("-request_date")
+        # transfers = transfers.order_by("-request_date")
         paginator = self.pagination_class()
         paginated_transfers = paginator.paginate_queryset(transfers, request)
         serializer = BudgetTransferSerializer(paginated_transfers, many=True)
