@@ -5,7 +5,7 @@ from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField
 class xx_TransactionTransfer(models.Model):
     """Model for ADJD transaction transfers"""
     transfer_id = models.AutoField(primary_key=True)
-    cost_center_code = models.TextField(null=True, blank=True)
+    cost_center_code = models.IntegerField(null=True, blank=True)
     account_name = EncryptedTextField(null=True, blank=True)
     approved_budget = EncryptedTextField(null=True, blank=True)
     available_budget = EncryptedTextField(null=True, blank=True)
@@ -20,7 +20,7 @@ class xx_TransactionTransfer(models.Model):
         related_name='adjd_transfers'
     )
     reason = EncryptedTextField(null=True, blank=True)
-    account_code = models.TextField(null=True, blank=True)
+    account_code = models.IntegerField(null=True, blank=True)
     cost_center_name = EncryptedTextField(null=True, blank=True)
     done = models.IntegerField(default=1)
     encumbrance = EncryptedTextField(null=True, blank=True)

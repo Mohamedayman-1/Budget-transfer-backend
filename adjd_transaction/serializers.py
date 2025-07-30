@@ -9,10 +9,10 @@ class AdjdTransactionTransferSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, attrs):
-        account_code = attrs.get('account_code')
-        cost_center_code = attrs.get('cost_center_code')
-        from_center = attrs.get('from_center')
-        to_center = attrs.get('to_center')
+        account_code = int(attrs.get('account_code'))
+        cost_center_code = int(attrs.get('cost_center_code'))
+        from_center = attrs.get('from_center', 0)
+        to_center = attrs.get('to_center', 0)
         # C0202001, 416220
         # If required fields are missing, raise an error
         if not account_code or not cost_center_code:

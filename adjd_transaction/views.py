@@ -206,7 +206,7 @@ class AdjdTransactionTransferCreateView(APIView):
             serializer = AdjdTransactionTransferSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                print(f"Transfer {index} created: {transfer}")
+                
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             
             print(f"Validation errors for transfer at index {index}: {serializer.errors}")
