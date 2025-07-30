@@ -14,10 +14,13 @@ class AdjdTransactionTransferSerializer(serializers.ModelSerializer):
         cost_center_code = int(attrs.get('cost_center_code'))
         from_center = Decimal(attrs.get('from_center', 0))
         to_center = Decimal(attrs.get('to_center', 0))
+
+        errors = {}
         # C0202001, 416220
         # If required fields are missing, raise an error
         if not account_code or not cost_center_code:
             raise serializers.ValidationError("Account code and cost center code are required.")
+            
 
         # Try to get the limit entry, but if it doesn't exist, allow the transfer
         try:
