@@ -313,8 +313,8 @@ class AdjdTransactionTransferListView(APIView):
         if all_related_transfers.exists():
             from_center_values = all_related_transfers.values_list("from_center", flat=True)
             to_center_values = all_related_transfers.values_list("to_center", flat=True)
-            total_from_center = sum(from_center_values)
-            total_to_center = sum(to_center_values)
+            total_from_center = sum(float(value) for value in from_center_values)
+            total_to_center = sum(float(value) for value in to_center_values)
 
             if total_from_center == total_to_center:
                 transaction.amount = total_from_center
