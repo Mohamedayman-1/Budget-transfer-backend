@@ -217,7 +217,38 @@ class AdjdTransactionTransferCreateView(APIView):
             ).delete()
 
             # Validate with serializer and create new transfer
-            serializer = AdjdTransactionTransferSerializer(data=request.data)
+
+            transfer_data = request.data
+            from_center = transfer_data.get("from_center")
+            if from_center is None or str(from_center).strip() == "":
+                from_center = 0
+            to_center = transfer_data.get("to_center")
+            if to_center is None or str(to_center).strip() == "":
+                to_center = 0
+            cost_center_code = transfer_data.get("cost_center_code")
+            account_code = transfer_data.get("account_code")
+            transfer_id = transfer_data.get("transfer_id")
+            approved_budget = transfer_data.get("approved_budget")
+            available_budget = transfer_data.get("available_budget")
+            encumbrance = transfer_data.get("encumbrance")
+            actual = transfer_data.get("actual")
+
+                # Prepare data for validation function
+            validation_data = {
+                "transaction_id": transaction_id,
+                "from_center": from_center,
+                "to_center": to_center,
+                "approved_budget": approved_budget,
+                "available_budget": available_budget,
+                "encumbrance": encumbrance,
+                "actual": actual,
+                "cost_center_code": cost_center_code,
+                "account_code": account_code,
+                "transfer_id": transfer_id,  # Fixed: was using 'transfer_id' instead of 'id'
+            }
+
+
+            serializer = AdjdTransactionTransferSerializer(data=validation_data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
