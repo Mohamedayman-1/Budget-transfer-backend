@@ -304,6 +304,8 @@ class AdjdTransactionTransferListView(APIView):
 
         # Also add transaction-wide validation summary
 
+
+
         all_related_transfers = xx_TransactionTransfer.objects.filter(
             transaction=transaction_id
         )
@@ -317,32 +319,41 @@ class AdjdTransactionTransferListView(APIView):
                 transaction.amount = total_from_center
                 transaction.save()
 
-        if transaction.code[0:3] == "AFR":
-            summary = {
-                "transaction_id": transaction_id,
-                "total_transfers": len(response_data),
-                "total_from": total_from_center,
-                "total_to": total_to_center,
-                "balanced": True,
-                "status": status,
-            }
-        else:
-            summary = {
-                "transaction_id": transaction_id,
-                "total_transfers": len(response_data),
-                "total_from": total_from_center,
-                "total_to": total_to_center,
-                "balanced": total_from_center == total_to_center,
-                "status": status,
-            }
+            if transaction.code[0:3] == "AFR":
+                summary = {
+                    "transaction_id": transaction_id,
+                    "total_transfers": len(response_data),
+                    "total_from": total_from_center,
+                    "total_to": total_to_center,
+                    "balanced": True,
+                    "status": status,
+                }
+            else:
+                summary = {
+                    "transaction_id": transaction_id,
+                    "total_transfers": len(response_data),
+                    "total_from": total_from_center,
+                    "total_to": total_to_center,
+                    "balanced": total_from_center == total_to_center,
+                    "status": status,
+                }
 
-        status = {"status": status}
-        return Response(
-            {"summary": summary, "transfers": response_data, "status": status}
-        )
+            status = {"status": status}
+            return Response(
+                {"summary": summary, "transfers": response_data, "status": status}
+            )
+        else:
+            return Response(
+                {
+                    "error": "No transfers found",
+                    "message": f"No transfers found for transaction ID: {transaction_id}",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
 
 class AdjdTransactionTransferDetailView(APIView):
+
     """Retrieve a specific ADJD transaction transfer"""
 
     permission_classes = [IsAuthenticated]
