@@ -2,7 +2,7 @@ from django.db import models
 from budget_management.models import xx_BudgetTransfer
 from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField, EncryptedBooleanField
 
-class xx_AdjdTransactionTransfer(models.Model):
+class xx_TransactionTransfer(models.Model):
     """Model for ADJD transaction transfers"""
     transfer_id = models.AutoField(primary_key=True)
     cost_center_code = models.TextField(null=True, blank=True)
@@ -29,7 +29,7 @@ class xx_AdjdTransactionTransfer(models.Model):
     file = models.FileField(upload_to='adjd_transfers/', null=True, blank=True)
     
     class Meta:
-        db_table = 'xx_AdjdTransactionTransfer'
+        db_table = 'XX_Transaction_Transfer_XX'
     
     def __str__(self):
         return f"ADJD Transfer {self.transfer_id}"

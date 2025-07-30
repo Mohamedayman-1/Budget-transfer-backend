@@ -1,5 +1,6 @@
 from django.db import models
 from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField,EncryptedBooleanField
+
 class XX_Account(models.Model):
     """Model representing ADJD accounts"""
     account = models.CharField(max_length=255, unique=True)
@@ -10,7 +11,7 @@ class XX_Account(models.Model):
         return self.account
     
     class Meta:
-     db_table = 'XX_Account'
+     db_table = 'XX_Account_XX'
 
 class XX_Entity(models.Model):
     """Model representing ADJD entities"""
@@ -22,7 +23,7 @@ class XX_Entity(models.Model):
         return self.entity
     
     class Meta:
-     db_table = 'XX_Entity'
+     db_table = 'XX_Entity_XX'
 
 
 class XX_PivotFund(models.Model):
@@ -43,7 +44,7 @@ class XX_PivotFund(models.Model):
                 name='unique_entity_account_year'
             )
         ]
-        db_table = 'XX_PivotFund'
+        db_table = 'XX_PivotFund_XX'
 
 class XX_TransactionAudit(models.Model):
     """Model representing ADJD transaction audit records"""
@@ -58,7 +59,7 @@ class XX_TransactionAudit(models.Model):
         return f"Audit {self.id}: {self.transcation_code}"
     
     class Meta:
-        db_table = 'XX_ADJD_TRANSACTION_AUDIT'
+        db_table = 'XX_TRANSACTION_AUDIT_XX'
 
 
 class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
@@ -77,7 +78,7 @@ class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
 
 
     class Meta:
-        db_table = 'XX_ACCOUNT_ENTITY_LIMIT'
+        db_table = 'XX_ACCOUNT_ENTITY_LIMIT_XX'
         unique_together = ('account_id', 'entity_id')
 
 

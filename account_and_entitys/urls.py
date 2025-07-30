@@ -4,7 +4,7 @@ from .views import (
     EntityListView, EntityCreateView, EntityDetailView, EntityUpdateView, EntityDeleteView,
     PivotFundListView, PivotFundCreateView, PivotFundDetailView, PivotFundUpdateView, PivotFundDeleteView,
     AdjdTransactionAuditListView, AdjdTransactionAuditCreateView, AdjdTransactionAuditDetailView, 
-    AdjdTransactionAuditUpdateView, AdjdTransactionAuditDeleteView, list_ACCOUNT_ENTITY_LIMIT,UpdateAccountEntityLimit,DeleteAccountEntityLimit,
+    AdjdTransactionAuditUpdateView, AdjdTransactionAuditDeleteView, list_ACCOUNT_ENTITY_LIMIT,UpdateAccountEntityLimit,DeleteAccountEntityLimit,AccountEntityLimitAPI
    
 )
 
@@ -39,6 +39,8 @@ urlpatterns = [
 
     # Fix the URL for list_ACCOUNT_ENTITY_LIMIT view
     path('account-entity-limit/list/', list_ACCOUNT_ENTITY_LIMIT.as_view(), name='account-entity-limits'),
+    path('account-entity-limit/upload/', AccountEntityLimitAPI.as_view(), name='account-entity-limits'),
+
     
     # Update and Delete URLs for Account Entity Limit
     path('account-entity-limit/update/', UpdateAccountEntityLimit.as_view(), name='update_limit'),

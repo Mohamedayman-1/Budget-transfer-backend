@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import xx_AdjdTransactionTransfer
+from .models import xx_TransactionTransfer
 from account_and_entitys.models import XX_PivotFund, XX_ACCOUNT_ENTITY_LIMIT
 from budget_management.models import xx_BudgetTransfer
 from .serializers import AdjdTransactionTransferSerializer
@@ -62,7 +62,7 @@ def validate_adjd_transaction(data, code=None):
             errors.append(" from value must be less or equal actual value")
 
     # Validation 5: Check for duplicate transfers (same transaction, from_account, to_account)
-    existing_transfers = xx_AdjdTransactionTransfer.objects.filter(
+    existing_transfers = xx_TransactionTransfer.objects.filter(
         transaction=data["transaction_id"],
         cost_center_code=data["cost_center_code"],
         account_code=data["account_code"],
@@ -149,7 +149,7 @@ class AdjdTransactionTransferCreateView(APIView):
                 )
 
             # Delete all existing transfers for this transaction
-            xx_AdjdTransactionTransfer.objects.filter(
+            xx_TransactionTransfer.objects.filter(
                 transaction=transaction_id
             ).delete()
 
@@ -197,7 +197,7 @@ class AdjdTransactionTransferCreateView(APIView):
                 )
 
             # Delete all existing transfers for this transaction for single item operations
-            xx_AdjdTransactionTransfer.objects.filter(
+            xx_TransactionTransfer.objects.filter(
                 transaction=transaction_id
             ).delete()
 
@@ -263,7 +263,7 @@ class AdjdTransactionTransferListView(APIView):
             else:
                 status = "watting for approval"
 
-        transfers = xx_AdjdTransactionTransfer.objects.filter(
+        transfers = xx_TransactionTransfer.objects.filter(
             transaction=transaction_id
         )
         serializer = AdjdTransactionTransferSerializer(transfers, many=True)
@@ -351,10 +351,10 @@ class AdjdTransactionTransferDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            transfer = xx_AdjdTransactionTransfer.objects.get(pk=pk)
+            transfer = xx_TransactionTransfer.objects.get(pk=pk)
             serializer = AdjdTransactionTransferSerializer(transfer)
             return Response(serializer.data)
-        except xx_AdjdTransactionTransfer.DoesNotExist:
+        except xx_TransactionTransfer.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -366,7 +366,7 @@ class AdjdTransactionTransferUpdateView(APIView):
     def put(self, request, pk):
         try:
 
-            transfer = xx_AdjdTransactionTransfer.objects.get(pk=pk)
+            transfer = xx_TransactionTransfer.objects.get(pk=pk)
 
             # First validate with serializer
             serializer = AdjdTransactionTransferSerializer(transfer, data=request.data)
@@ -378,7 +378,7 @@ class AdjdTransactionTransferUpdateView(APIView):
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        except xx_AdjdTransactionTransfer.DoesNotExist:
+        except xx_TransactionTransfer.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -389,10 +389,10 @@ class AdjdTransactionTransferDeleteView(APIView):
 
     def delete(self, request, pk):
         try:
-            transfer = xx_AdjdTransactionTransfer.objects.get(pk=pk)
+            transfer = xx_TransactionTransfer.objects.get(pk=pk)
             transfer.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        except xx_AdjdTransactionTransfer.DoesNotExist:
+        except xx_TransactionTransfer.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -432,7 +432,7 @@ class AdjdtranscationtransferSubmit(APIView):
 
             try:
                 # For dictionary input, get transfers from the database
-                transfers = xx_AdjdTransactionTransfer.objects.filter(
+                transfers = xx_TransactionTransfer.objects.filter(
                     transaction=transaction_id
                 )
                 code = xx_BudgetTransfer.objects.get(transaction_id=transaction_id).code
@@ -701,7 +701,7 @@ class AdjdTransactionTransferExcelUploadView(APIView):
                 )
 
             # Delete existing transfers for this transaction
-            # xx_AdjdTransactionTransfer.objects.filter(transaction=transaction_id).delete()
+            # xx_TransactionTransfer.objects.filter(transaction=transaction_id).delete()
 
             # Process Excel data
             created_transfers = []

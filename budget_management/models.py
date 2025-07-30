@@ -37,7 +37,7 @@ class xx_BudgetTransfer(models.Model):
     type = EncryptedCharField(max_length=10, null=True, blank=True)
     
     class Meta:
-        db_table = 'XX_BUDGET_TRANSFER'
+        db_table = 'XX_BUDGET_TRANSFER_XX'
     
     def __str__(self):
         return f"Transfer {self.transaction_id}: {self.amount} requested by {self.requested_by}"
@@ -59,7 +59,7 @@ class xx_BudgetTransferAttachment(models.Model):
     upload_date = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        db_table = 'XX_BUDGET_TRANSFER_ATTACHMENT'
+        db_table = 'XX_BUDGET_TRANSFER_ATTACHMENT_XX'
         
     def __str__(self):
         return f"Attachment {self.attachment_id}: {self.file_name} for Transfer {self.budget_transfer_id}"
@@ -80,7 +80,7 @@ class xx_BudgetTransferRejectReason(models.Model):
 
 
     class Meta:
-        db_table = 'XX_BUDGET_TRANSFER_REJECT_REASON'
+        db_table = 'XX_BUDGET_TRANSFER_REJECT_REASON_XX'
         
     def __str__(self):
         return f"Reject Reason for Transfer {self.budget_transfer_id}: {self.reason_text}"

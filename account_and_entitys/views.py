@@ -1,3 +1,4 @@
+import numpy as np
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -5,6 +6,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit, XX_ACCOUNT_ENTITY_LIMIT
 from .serializers import AccountSerializer, EntitySerializer, PivotFundSerializer, TransactionAuditSerializer, AccountEntityLimitSerializer
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
+from rest_framework import status
+import pandas as pd
+from django.db import transaction
+from .models import XX_ACCOUNT_ENTITY_LIMIT
+from .serializers import AccountEntityLimitSerializer
 
 class EntityPagination(PageNumberPagination):
     """Pagination class for entities and accounts"""
@@ -485,6 +495,8 @@ class AdjdTransactionAuditDeleteView(APIView):
             'message': 'Audit record deleted successfully.'
         }, status=status.HTTP_200_OK)
 
+
+
 class list_ACCOUNT_ENTITY_LIMIT(APIView):
     """List all ADJD transaction audit records"""
     permission_classes = [IsAuthenticated]
@@ -518,6 +530,118 @@ class list_ACCOUNT_ENTITY_LIMIT(APIView):
         ]
         
         return paginator.get_paginated_response(data)
+
+
+
+class AccountEntityLimitAPI(APIView):
+    """Handle both listing and creation of ACCOUNT_ENTITY_LIMIT records"""
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]  # For file upload support
+
+    def get(self, request):
+        """List all records with optional filtering by cost_center"""
+        entity_id = request.query_params.get('cost_center')
+
+        audit_records = XX_ACCOUNT_ENTITY_LIMIT.objects.filter(
+            entity_id=entity_id
+        ).order_by('-id')
+        
+        paginator = self.pagination_class()
+        paginated_records = paginator.paginate_queryset(audit_records, request)
+        serializer = AccountEntityLimitSerializer(paginated_records, many=True)
+
+        data = [
+            {
+                'id': record["id"],
+                'account': record["account_id"],
+                'is_transfer_allowed_for_source': record["is_transfer_allowed_for_source"],
+                'is_transfer_allowed_for_target': record["is_transfer_allowed_for_target"],
+                'is_transfer_allowed': record["is_transfer_allowed"],
+                'source_count': record["source_count"],
+                'target_count': record["target_count"],
+            }
+            for record in serializer.data
+        ]
+        
+        return paginator.get_paginated_response(data)
+
+    def post(self, request):
+        """Handle both single record creation and bulk upload via file"""
+        # Check if file is present for bulk upload
+        uploaded_file = request.FILES.get('file')
+        
+        if uploaded_file:
+            return self._handle_file_upload(uploaded_file)
+        else:
+            return self._handle_single_record(request.data)
+
+    def _handle_file_upload(self, file):
+        """Process Excel file for bulk creation"""
+        try:
+            # Read Excel file
+            df = pd.read_excel(file)
+            
+            # Clean column names (convert to lowercase and strip whitespace)
+            df.columns = df.columns.str.strip().str.lower()
+            df = df.replace([np.nan, pd.NA, pd.NaT, '', 'NULL', 'null'], None)
+
+
+            # Convert to list of dictionaries
+            records = df.to_dict('records')
+            
+            created_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for idx, record in enumerate(records, start=1):
+                    try:
+                        serializer = AccountEntityLimitSerializer(data=record)
+                        if serializer.is_valid():
+                            serializer.save()
+                            created_count += 1
+                        else:
+                            errors.append({
+                                'row': idx,
+                                'errors': serializer.errors,
+                                'data': record
+                            })
+                    except Exception as e:
+                        errors.append({
+                            'row': idx,
+                            'error': str(e),
+                            'data': record
+                        })
+            
+            response = {
+                'status': 'success',
+                'created_count': created_count,
+                'error_count': len(errors),
+                'errors': errors if errors else None
+            }
+            
+            return Response(response, status=status.HTTP_201_CREATED if created_count else status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response(
+                {'status': 'error', 'message': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def _handle_single_record(self, data):
+        """Handle single record creation"""
+        serializer = AccountEntityLimitSerializer(data=data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
 
 class UpdateAccountEntityLimit(APIView):
     """Update a specific account entity limit."""

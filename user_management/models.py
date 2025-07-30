@@ -43,16 +43,33 @@ class xx_UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
  
+
+class xx_UserLevel(models.Model):
+    """Model to represent user levels/roles in the system."""
+    name = models.CharField(max_length=50, unique=True)
+    description = EncryptedTextField(null=True, blank=True)
+    level_order = models.PositiveIntegerField(default=1, help_text="Order of the level for hierarchy")
+
+    class Meta:
+        db_table = 'XX_USER_LEVEL_XX'
+        ordering = ['level_order']
+
+    def __str__(self):
+        return self.name
+
+
+
+
 class xx_User(AbstractBaseUser, PermissionsMixin):
     """Custom user model with roles for admin and regular users"""
     ROLE_CHOICES = (('admin', 'Admin'), ('user', 'User'))
     username = models.CharField(max_length=255, unique=True)
-    role = EncryptedCharField(max_length=10, choices=ROLE_CHOICES)
-    is_active = EncryptedBooleanField(default=True)
-    is_staff = EncryptedBooleanField(default=False)
-    can_transfer_budget = EncryptedBooleanField(default=False)  # Permission specific to this app
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=True)
+    can_transfer_budget = models.BooleanField(default=True)  # Permission specific to this app
     user_level = models.ForeignKey(
-        'xx_UserLevel',
+        xx_UserLevel,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -68,7 +85,7 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
     
     class Meta:
         # Use the exact name of the existing table in your Oracle database
-        db_table = 'XX_USER'
+        db_table = 'XX_USER_XX'
         # If you have other Meta options, keep them here
 
 
@@ -77,18 +94,6 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
 
 
 
-class xx_UserLevel(models.Model):
-    """Model to represent user levels/roles in the system."""
-    name = models.CharField(max_length=50, unique=True)
-    description = EncryptedTextField(null=True, blank=True)
-    level_order = models.PositiveIntegerField(default=1, help_text="Order of the level for hierarchy")
-
-    class Meta:
-        db_table = 'XX_USER_LEVEL'
-        ordering = ['level_order']
-
-    def __str__(self):
-        return self.name
 
 class xx_notification(models.Model):
     """Model to represent notifications for users."""
@@ -100,7 +105,7 @@ class xx_notification(models.Model):
     is_shown = models.BooleanField(default=True)  # For tracking if the notification was shown to the user
 
     class Meta:
-        db_table = 'XX_NOTIFICATION'
+        db_table = 'XX_NOTIFICATION_XX'
         ordering = ['-created_at']
 
     def __str__(self):

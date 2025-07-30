@@ -320,7 +320,7 @@
         "reject_by": "manager1"
       }
     },
-    "XX_ADJDTRANSACTIONTRANSFER": {
+    "xx_TransactionTransfer": {
       "description": "Tracks ADJD transaction transfers.",
       "columns": {
         "transfer_id": {"type": "INTEGER", "constraints": ["PRIMARY KEY", "AUTOINCREMENT"], "description": "Unique identifier for each transfer."},

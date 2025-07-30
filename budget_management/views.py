@@ -14,7 +14,7 @@ from .models import (
     xx_BudgetTransferRejectReason,
 )
 from account_and_entitys.models import XX_PivotFund, XX_Entity, XX_Account
-from adjd_transaction.models import xx_AdjdTransactionTransfer
+from adjd_transaction.models import xx_TransactionTransfer
 from .serializers import BudgetTransferSerializer
 from user_management.permissions import IsAdmin, CanTransferBudget
 from public_funtion.update_pivot_fund import update_pivot_fund
@@ -502,7 +502,7 @@ class Adjdtranscationtransferapprovel_reject(APIView):
                 if (
                     max_level == trasncation.status_level and decide == 2
                 ) or decide == 3:
-                    trasfers = xx_AdjdTransactionTransfer.objects.filter(
+                    trasfers = xx_TransactionTransfer.objects.filter(
                         transaction_id=transaction_id
                     )
                     for transfer in trasfers:
@@ -820,7 +820,7 @@ class DashboardBudgetTransferView(APIView):
             )
 
             # Filter 1: Total from_center for same cost_center_code and account_code combination
-            from_center_query = xx_AdjdTransactionTransfer.objects.filter(
+            from_center_query = xx_TransactionTransfer.objects.filter(
                 transaction__status="approved"
             )
 
@@ -849,7 +849,7 @@ class DashboardBudgetTransferView(APIView):
 
             # Optimize: Replace loops with single aggregation queries
             # Get all approved transaction transfers in one query
-            approved_transactions_query = xx_AdjdTransactionTransfer.objects.filter(
+            approved_transactions_query = xx_TransactionTransfer.objects.filter(
                 transaction__status="approved"
             ).annotate(
                 cost_center_code_str=Cast("cost_center_code", CharField()),
