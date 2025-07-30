@@ -233,8 +233,8 @@ class AdjdTransactionTransferListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        transction = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
-        if not transction:
+        transaction = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
+        if not transaction:
             return Response(
                 {
                     "error": "transaction not found",
@@ -243,22 +243,22 @@ class AdjdTransactionTransferListView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         status = False
-        if transction.code != "FAD":
+        if transaction.code[0:3] != "FAD":
 
-            if transction.status_level and transction.status_level < 1:
+            if transaction.status_level and transaction.status_level < 1:
                 status = "is rejected"
-            elif transction.status_level and transction.status_level == 1:
+            elif transaction.status_level and transaction.status_level == 1:
                 status = "not yet sent for approval"
-            elif transction.status_level and transction.status_level == 4:
+            elif transaction.status_level and transaction.status_level == 4:
                 status = "approved"
             else:
-                status = "watting for approval"
+                status = "waiting for approval"
         else:
-            if transction.status_level and transction.status_level < 1:
+            if transaction.status_level and transaction.status_level < 1:
                 status = "is rejected"
-            elif transction.status_level and transction.status_level == 3:
+            elif transaction.status_level and transaction.status_level == 3:
                 status = "approved"
-            elif transction.status_level and transction.status_level == 1:
+            elif transaction.status_level and transaction.status_level == 1:
                 status = "not yet sent for approval"
             else:
                 status = "watting for approval"
@@ -290,10 +290,10 @@ class AdjdTransactionTransferListView(APIView):
 
             # Validate the transfer
             validation_errors = validate_adjd_transaction(
-                validation_data, code=transction.code
+                validation_data, code=transaction.code
             )
             validation_errors = validate_adjd_transcation_transfer(
-                validation_data, code=transction.code, errors=validation_errors
+                validation_data, code=transaction.code, errors=validation_errors
             )
             # Add validation results to the transfer data
             transfer_result = transfer_data.copy()
@@ -303,23 +303,21 @@ class AdjdTransactionTransferListView(APIView):
             response_data.append(transfer_result)
 
         # Also add transaction-wide validation summary
-        total_from_center = (
-            transfers.filter(from_center__gt=0).aggregate(Sum("from_center"))[
-                "from_center__sum"
-            ]
-            or 0
-        )
-        total_to_center = (
-            transfers.filter(to_center__gt=0).aggregate(Sum("to_center"))[
-                "to_center__sum"
-            ]
-            or 0
-        )
-        if total_from_center == total_to_center:
-            transction.amount = total_from_center
-            transction.save()
 
-        if transction.code[0:3] == "AFR":
+        all_related_transfers = xx_TransactionTransfer.objects.filter(
+            transaction=transaction_id
+        )
+        if all_related_transfers.exists():
+            from_center_values = all_related_transfers.values_list("from_center", flat=True)
+            to_center_values = all_related_transfers.values_list("to_center", flat=True)
+            total_from_center = sum(from_center_values)
+            total_to_center = sum(to_center_values)
+
+            if total_from_center == total_to_center:
+                transaction.amount = total_from_center
+                transaction.save()
+
+        if transaction.code[0:3] == "AFR":
             summary = {
                 "transaction_id": transaction_id,
                 "total_transfers": len(response_data),
