@@ -28,8 +28,8 @@ class XX_Entity(models.Model):
 
 class XX_PivotFund(models.Model):
     """Model representing ADJD pivot funds"""
-    entity = models.CharField(max_length=50)
-    account = models.CharField(max_length=50)
+    entity = models.IntegerField()
+    account = models.IntegerField()
     year = models.IntegerField()
     actual = EncryptedCharField(max_length=255, null=True, blank=True)
     fund = EncryptedCharField( max_length=255, null=True, blank=True)
