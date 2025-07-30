@@ -1,3 +1,4 @@
+import rest_framework
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -230,7 +231,7 @@ class AdjdTransactionTransferListView(APIView):
                     "error": "transaction_id is required",
                     "message": "Please provide a transaction ID to retrieve related transfers",
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=rest_framework.status.HTTP_400_BAD_REQUEST,
             )
 
         transaction = xx_BudgetTransfer.objects.get(transaction_id=transaction_id)
@@ -240,7 +241,7 @@ class AdjdTransactionTransferListView(APIView):
                     "error": "transaction not found",
                     "message": f"No transaction found with ID: {transaction_id}",
                 },
-                status=status.HTTP_404_NOT_FOUND,
+                status=rest_framework.status.HTTP_404_NOT_FOUND,
             )
         status = False
         if transaction.code[0:3] != "FAD":
@@ -348,7 +349,7 @@ class AdjdTransactionTransferListView(APIView):
                     "error": "No transfers found",
                     "message": f"No transfers found for transaction ID: {transaction_id}",
                 },
-                status=status.HTTP_404_NOT_FOUND,
+                status=rest_framework.status.HTTP_404_NOT_FOUND,
             )
 
 
