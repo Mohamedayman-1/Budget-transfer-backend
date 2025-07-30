@@ -319,15 +319,15 @@ class AdjdTransactionTransferListView(APIView):
 
         for transfer_data in serializer.data:
 
-            from_center = transfer_data.get("from_center", 0)
-            to_center = transfer_data.get("to_center", 0)
+            from_center = float(transfer_data.get("from_center", 0))
+            to_center = float(transfer_data.get("to_center", 0))
             cost_center_code = transfer_data.get("cost_center_code")
             account_code = transfer_data.get("account_code")
             transfer_id = transfer_data.get("transfer_id")
-            approved_budget = transfer_data.get("approved_budget", 0)
-            available_budget = transfer_data.get("available_budget", 0)
-            encumbrance = transfer_data.get("encumbrance", 0)
-            actual = transfer_data.get("actual", 0)
+            approved_budget = float(transfer_data.get("approved_budget", 0))
+            available_budget = float(transfer_data.get("available_budget", 0))
+            encumbrance = float(transfer_data.get("encumbrance", 0))
+            actual = float(transfer_data.get("actual", 0))
 
             # Prepare data for validation function
             validation_data = {
