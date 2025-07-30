@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 
 from account_and_entitys.models import XX_ACCOUNT_ENTITY_LIMIT
@@ -11,8 +12,8 @@ class AdjdTransactionTransferSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         account_code = int(attrs.get('account_code'))
         cost_center_code = int(attrs.get('cost_center_code'))
-        from_center = attrs.get('from_center', 0)
-        to_center = attrs.get('to_center', 0)
+        from_center = Decimal(attrs.get('from_center', 0))
+        to_center = Decimal(attrs.get('to_center', 0))
         # C0202001, 416220
         # If required fields are missing, raise an error
         if not account_code or not cost_center_code:
