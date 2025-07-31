@@ -825,9 +825,9 @@ class DashboardBudgetTransferView(APIView):
             total_transfers_far = 0
             total_transfers_afr = 0
             total_transfers_fad = 0
-            approved_transfers = 0
-            rejected_transfers = 0
-            pending_transfers = 0
+            total_approved_transfers = 0
+            total_rejected_transfers = 0
+            total_pending_transfers = 0
 
             transfers_State1 = 0
             transfers_State2 = 0
@@ -844,12 +844,12 @@ class DashboardBudgetTransferView(APIView):
                    total_transfers_fad += 1
 
                 if i['status'] == 'approved':
-                    approved_transfers += 1
+                    total_approved_transfers += 1
                 elif i['status'] == 'rejected':
-                    rejected_transfers += 1
+                    total_rejected_transfers += 1
                 elif i['status'] == 'pending':
-                    pending_transfers += 1
-                
+                    total_pending_transfers += 1
+
                 if i['status_level'] == 1:
                     transfers_State1 += 1
                 elif i['status_level'] == 2:
@@ -948,9 +948,9 @@ class DashboardBudgetTransferView(APIView):
                         "total_transfers_far": total_transfers_far,
                         "total_transfers_afr": total_transfers_afr,
                         "total_transfers_fad": total_transfers_fad,
-                        "approved_transfers": approved_transfers,
-                        "rejected_transfers": rejected_transfers,
-                        "pending_transfers": pending_transfers,
+                        "approved_transfers": total_approved_transfers,
+                        "rejected_transfers": total_rejected_transfers,
+                        "pending_transfers": total_pending_transfers,
                         "filtered_combinations": list(from_center_combinations),
                         "cost_center_totals": cost_center_totals,
                         "account_code_totals": account_code_totals,
