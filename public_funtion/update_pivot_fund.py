@@ -17,9 +17,9 @@ def update_pivot_fund(cost_center_code, account_code, from_center, to_center, de
         print(f"to_center: {to_center}")
         
         pivot_fund = XX_PivotFund.objects.get(entity=cost_center_code, account=account_code)
-        pivot_fund.encumbrance = pivot_fund.encumbrance or Decimal('0')
-        pivot_fund.actual = pivot_fund.actual or Decimal('0')
-       
+        pivot_fund.encumbrance = Decimal(str(pivot_fund.encumbrance).strip()) if pivot_fund.encumbrance not in [None, '', ' '] else Decimal('0')
+        pivot_fund.actual = Decimal(str(pivot_fund.actual).strip()) if pivot_fund.actual not in [None, '', ' '] else Decimal('0')
+
         print(f"Pivot fund found: ////////////")
         print(f"Pivot fund found: {pivot_fund}")
         print(f"Pivot fund found: ////////////")
