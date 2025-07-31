@@ -944,7 +944,7 @@ class DashboardBudgetTransferView(APIView):
                 from_center_combinations=[]
                 return Response(
                     {
-                        "total_transfers": ['total_transfers'],
+                        "total_transfers": len(transactions_list),
                         "total_transfers_far": total_transfers_far,
                         "total_transfers_afr": total_transfers_afr,
                         "total_transfers_fad": total_transfers_fad,
