@@ -114,19 +114,19 @@ def validate_adjd_transcation_transfer(data, code=None, errors=None):
         errors.append(
             f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules ( can't use this account and cost center to make transfer)"
         )
-    if allowed_to_make_transfer.is_transer_allowed == "No":
+    if allowed_to_make_transfer.is_transer_allowed == False:
         errors.append(
             f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules"
         )
     else:
-        allowed_to_make_transfer.is_transer_allowed == "Yes"
+        allowed_to_make_transfer.is_transer_allowed == True
         if data["from_center"] > 0:
-            if allowed_to_make_transfer.is_transer_allowed_for_source != "Yes":
+            if allowed_to_make_transfer.is_transer_allowed_for_source != True:
                 errors.append(
                     f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules (can't transfer from this account)"
                 )
         if data["to_center"] > 0:
-            if allowed_to_make_transfer.is_transer_allowed_for_target != "Yes":
+            if allowed_to_make_transfer.is_transer_allowed_for_target != True:
                 errors.append(
                     f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules (can't transfer to this account)"
                 )
