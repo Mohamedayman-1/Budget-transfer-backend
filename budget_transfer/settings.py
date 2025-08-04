@@ -63,6 +63,7 @@ FIELD_ENCRYPTION_KEY = 'G2g9Xb8qH-SZs-So5QEK1EXmf_lUqHuvdgFnitEtRB0='
 
 
 MIDDLEWARE = [
+    'budget_transfer.middleware.Encryption.EncryptionMiddleware',
     'budget_transfer.middleware.Sqlinjection.SQLInjectionProtectionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -178,6 +179,7 @@ CSRF_TRUSTED_ORIGINS = [  'https://lightidea.org',
     'https://www.lightidea.org',
     'https://lightidea.org:9000',
     'https://budgettransfer.lightidea.org',
+    
 ]
 
 LOGGING = {
