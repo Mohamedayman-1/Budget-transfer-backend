@@ -63,6 +63,7 @@ FIELD_ENCRYPTION_KEY = 'G2g9Xb8qH-SZs-So5QEK1EXmf_lUqHuvdgFnitEtRB0='
 
 
 MIDDLEWARE = [
+    'budget_transfer.middleware.Sqlinjection.SQLInjectionProtectionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -178,3 +179,40 @@ CSRF_TRUSTED_ORIGINS = [  'https://lightidea.org',
     'https://lightidea.org:9000',
     'https://budgettransfer.lightidea.org',
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/security.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+    },
+    'loggers': {
+        'budget_transfer.middleware.Sqlinjection': {
+            'handlers': ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
