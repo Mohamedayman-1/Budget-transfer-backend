@@ -1,3 +1,4 @@
+from datetime import time
 from decimal import Decimal
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,6 +24,24 @@ import base64
 from django.db.models.functions import Cast
 from django.db.models import CharField
 from collections import defaultdict
+from django.db.models import Prefetch
+from collections import defaultdict
+from decimal import Decimal
+import time
+import multiprocessing
+from itertools import islice
+from decimal import Decimal
+import multiprocessing
+from collections import defaultdict
+from decimal import Decimal
+import time
+from itertools import islice
+from django.db import connection
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+
 
 class TransferPagination(PageNumberPagination):
     """Pagination class for budget transfers"""
@@ -790,156 +809,365 @@ class list_budget_transfer_reject_reason(APIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-class DashboardBudgetTransferView(APIView):
-    """Dashboard view for budget transfers"""
+
+
+
+
+
+#######multi proccsing ####################
+
+# import multiprocessing
+# from collections import defaultdict
+# from decimal import Decimal
+# import time
+# from itertools import islice
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from rest_framework import status
+# from rest_framework.permissions import IsAuthenticated
+
+# # Top-level worker initialization function
+# def init_worker():
+#     """Initialize Django in each worker process"""
+#     import os
+#     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')  # REPLACE WITH YOUR SETTINGS
+#     import django
+#     django.setup()
+
+# def process_transfer_batch(args):
+#     """Process a batch of transfers in a worker process"""
+#     transfer_ids, filter_cost_center, filter_account_code = args
+#     from django.db import connection
+#     from adjd_transaction.models import xx_TransactionTransfer
+#     connection.connect()
+    
+#     DECIMAL_ZERO = Decimal(0)
+#     batch_results = []
+    
+#     # Get transfers in this batch
+#     transfers = xx_TransactionTransfer.objects.filter(
+#         transfer_id__in=transfer_ids
+#     ).select_related('transaction')
+    
+#     for transfer in transfers:
+#         if transfer.transaction and transfer.transaction.status == "approved":
+#             result = {
+#                 "cost_center_code": transfer.cost_center_code,
+#                 "account_code": transfer.account_code,
+#                 "from_center": Decimal(str(transfer.from_center)) if transfer.from_center else DECIMAL_ZERO,
+#                 "to_center": Decimal(str(transfer.to_center)) if transfer.to_center else DECIMAL_ZERO,
+#             }
+#             batch_results.append(result)
+    
+#     connection.close()
+#     return batch_results
+
+# class DashboardBudgetTransferView(APIView):
+    """Optimized dashboard view with multiprocessing"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
-            from django.db.models import Prefetch
-            from collections import defaultdict
-            from decimal import Decimal
+            start_time = time.time()
 
-            # Get filter parameters from query params
+            # Get filter parameters
             filter_cost_center = request.query_params.get("cost_center_code")
             filter_account_code = request.query_params.get("account_code")
 
-            # Optimization 1: Fetch only needed fields from database
-            transactions = xx_BudgetTransfer.objects.only(
-                'transaction_id', 'code', 'status', 'status_level'
-            )
-
-            # Initialize counters
+            # PHASE 1: Count transfers (single query)
+            count_start = time.time()
+            transfers = xx_BudgetTransfer.objects.only('code', 'status', 'status_level')
+            
             counts = {
-                'far': 0,
-                'afr': 0,
-                'fad': 0,
-                'approved': 0,
-                'rejected': 0,
-                'pending': 0,
-                'state1': 0,
-                'state2': 0,
-                'state3': 0,
-                'state4': 0
+                'total': 0,
+                'far': 0, 'afr': 0, 'fad': 0,
+                'approved': 0, 'rejected': 0, 'pending': 0,
+                'levels': {1: 0, 2: 0, 3: 0, 4: 0}
             }
 
-            # Single pass through transactions to count everything
-            for transfer in transactions:
-                code_prefix = transfer.code[:3].upper()
-                if code_prefix == 'FAR':
-                    counts['far'] += 1
-                elif code_prefix == 'AFR':
-                    counts['afr'] += 1
-                elif code_prefix == 'FAD':
-                    counts['fad'] += 1
+            for transfer in transfers:
+                counts['total'] += 1
+                if transfer.code:
+                    prefix = transfer.code[:3].upper()
+                    if prefix == 'FAR': counts['far'] += 1
+                    elif prefix == 'AFR': counts['afr'] += 1
+                    elif prefix == 'FAD': counts['fad'] += 1
+                
+                if transfer.status == 'approved': counts['approved'] += 1
+                elif transfer.status == 'rejected': counts['rejected'] += 1
+                elif transfer.status == 'pending': counts['pending'] += 1
+                
+                if 1 <= transfer.status_level <= 4:
+                    counts['levels'][transfer.status_level] += 1
 
-                if transfer.status == 'approved':
-                    counts['approved'] += 1
-                elif transfer.status == 'rejected':
-                    counts['rejected'] += 1
-                elif transfer.status == 'pending':
-                    counts['pending'] += 1
+            print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
-                if transfer.status_level == 1:
-                    counts['state1'] += 1
-                elif transfer.status_level == 2:
-                    counts['state2'] += 1
-                elif transfer.status_level == 3:
-                    counts['state3'] += 1
-                elif transfer.status_level == 4:
-                    counts['state4'] += 1
-
-            # Optimization 2: Prefetch related transfers in a single query
-            transfer_queryset = xx_TransactionTransfer.objects.only(
-                'transaction', 'transfer_id', 'cost_center_code', 
-                'account_code', 'from_center', 'to_center'
-            ).select_related('transaction')
-
-            # Optimization 3: Process approved transfers in memory
-            approved_transfers = [
-                {
-                    "transaction_id": transfer.transfer_id,
-                    "cost_center_code": transfer.cost_center_code,
-                    "account_code": transfer.account_code,
-                    "from_center": Decimal(str(transfer.from_center)),
-                    "to_center": Decimal(str(transfer.to_center)),
-                }
-                for transfer in transfer_queryset 
-                if transfer.transaction and transfer.transaction.status == "approved"
+            # PHASE 2: Parallel transfer processing
+            transfer_start = time.time()
+            approved_transfers = []
+            
+            # Get all transfer IDs first (lightweight query)
+            all_transfer_ids = list(xx_TransactionTransfer.objects.values_list(
+                'transfer_id', flat=True
+            ))
+            
+            # Configure multiprocessing
+            batch_size = 500  # Smaller batches for better load balancing
+            num_processes = min(multiprocessing.cpu_count() - 1 or 1, 4)  # Limit to 4 processes
+            
+            # Prepare batches
+            batches = [
+                (all_transfer_ids[i:i + batch_size], filter_cost_center, filter_account_code)
+                for i in range(0, len(all_transfer_ids), batch_size)
             ]
 
-            # Process data aggregations
-            def aggregate_data(transfers, group_by_keys):
-                aggregated = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-                for transfer in transfers:
-                    key = tuple(transfer[k] for k in group_by_keys)
-                    aggregated[key]["total_from_center"] += transfer["from_center"]
-                    aggregated[key]["total_to_center"] += transfer["to_center"]
-                return aggregated
+            # Process in parallel
+            with multiprocessing.Pool(
+                processes=num_processes,
+                initializer=init_worker
+            ) as pool:
+                for batch_result in pool.imap_unordered(
+                    process_transfer_batch,
+                    batches,
+                    chunksize=1  # One batch per worker at a time
+                ):
+                    approved_transfers.extend(batch_result)
 
-            # Create all aggregations in one pass
-            all_combinations_data = []
-            cost_center_data = []
-            account_code_data = []
-            
-            # Use a single pass through approved_transfers to populate all aggregations
-            cc_aggregate = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-            ac_aggregate = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-            combo_aggregate = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-            
+            print(f"Transfer processing completed in {time.time() - transfer_start:.2f}s")
+            print(f"Found {len(approved_transfers)} approved transfers")
+
+            # PHASE 3: Aggregations
+            agg_start = time.time()
+            by_cost_center = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            by_account_code = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            by_combination = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            filtered = []
+
             for transfer in approved_transfers:
-                # Cost center aggregation
-                cc_key = transfer["cost_center_code"]
-                cc_aggregate[cc_key]["total_from_center"] += transfer["from_center"]
-                cc_aggregate[cc_key]["total_to_center"] += transfer["to_center"]
-                
-                # Account code aggregation
-                ac_key = transfer["account_code"]
-                ac_aggregate[ac_key]["total_from_center"] += transfer["from_center"]
-                ac_aggregate[ac_key]["total_to_center"] += transfer["to_center"]
-                
-                # Combination aggregation
-                combo_key = (transfer["cost_center_code"], transfer["account_code"])
-                combo_aggregate[combo_key]["total_from_center"] += transfer["from_center"]
-                combo_aggregate[combo_key]["total_to_center"] += transfer["to_center"]
-            
-            # Convert aggregates to response format
-            cost_center_totals = [
-                {"cost_center_code": k, **v} 
-                for k, v in cc_aggregate.items()
-            ]
-            
-            account_code_totals = [
-                {"account_code": k, **v} 
-                for k, v in ac_aggregate.items()
-            ]
-            
-            all_combinations = [
-                {
-                    "cost_center_code": k[0], 
-                    "account_code": k[1], 
-                    **v
-                } 
-                for k, v in combo_aggregate.items()
-            ]
+                cc = transfer['cost_center_code']
+                ac = transfer['account_code']
+                from_amt = transfer['from_center']
+                to_amt = transfer['to_center']
 
-            # Apply filters if provided
-            filtered_combinations = []
-            if filter_cost_center or filter_account_code:
-                for item in all_combinations:
-                    if (not filter_cost_center or item["cost_center_code"] == filter_cost_center) and \
-                       (not filter_account_code or item["account_code"] == filter_account_code):
-                        filtered_combinations.append(item)
+                by_cost_center[cc]['from'] += from_amt
+                by_cost_center[cc]['to'] += to_amt
+                by_account_code[ac]['from'] += from_amt
+                by_account_code[ac]['to'] += to_amt
+                by_combination[(cc, ac)]['from'] += from_amt
+                by_combination[(cc, ac)]['to'] += to_amt
 
-            return Response({
-                "total_transfers": len(transactions),
+                # Apply filters if specified
+                if (not filter_cost_center or cc == filter_cost_center) and \
+                   (not filter_account_code or ac == filter_account_code):
+                    filtered.append(transfer)
+
+            # Prepare response data
+            response_data = {
+                "total_transfers": counts['total'],
                 "total_transfers_far": counts['far'],
                 "total_transfers_afr": counts['afr'],
                 "total_transfers_fad": counts['fad'],
                 "approved_transfers": counts['approved'],
                 "rejected_transfers": counts['rejected'],
                 "pending_transfers": counts['pending'],
-                "filtered_combinations": filtered_combinations,
+                "filtered_combinations": filtered,
+                "cost_center_totals": [{
+                    'cost_center_code': k,
+                    'total_from_center': v['from'],
+                    'total_to_center': v['to']
+                } for k, v in by_cost_center.items()],
+                "account_code_totals": [{
+                    'account_code': k,
+                    'total_from_center': v['from'],
+                    'total_to_center': v['to']
+                } for k, v in by_account_code.items()],
+                "all_combinations": [{
+                    'cost_center_code': k[0],
+                    'account_code': k[1],
+                    'total_from_center': v['from'],
+                    'total_to_center': v['to']
+                } for k, v in by_combination.items()],
+                "applied_filters": {
+                    "cost_center_code": filter_cost_center,
+                    "account_code": filter_account_code,
+                },
+                "pending_transfers": {
+                    "Level1": counts['levels'][1],
+                    "Level2": counts['levels'][2],
+                    "Level3": counts['levels'][3],
+                    "Level4": counts['levels'][4],
+                },
+            }
+
+            print(f"Aggregation completed in {time.time() - agg_start:.2f}s")
+            print(f"Total processing time: {time.time() - start_time:.2f}s")
+
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+
+
+
+
+
+
+
+
+class DashboardBudgetTransferView(APIView):
+    """Optimized dashboard view for encrypted budget transfers"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # import time
+            # from collections import defaultdict
+            # from decimal import Decimal
+            start_time = time.time()
+
+            # Get filter parameters
+            filter_cost_center = request.query_params.get("cost_center_code")
+            filter_account_code = request.query_params.get("account_code")
+
+            # PHASE 1: Count transfers (optimized single query)
+            count_start = time.time()
+            transfers = xx_BudgetTransfer.objects.only(
+                'code', 'status', 'status_level'
+            )
+            
+            counts = {
+                'total': 0,
+                'far': 0, 'afr': 0, 'fad': 0,
+                'approved': 0, 'rejected': 0, 'pending': 0,
+                'levels': {1: 0, 2: 0, 3: 0, 4: 0}
+            }
+
+            for transfer in transfers:
+                counts['total'] += 1
+                
+                # Count by code prefix
+                if transfer.code:
+                    prefix = transfer.code[:3].upper()
+                    if prefix == 'FAR': counts['far'] += 1
+                    elif prefix == 'AFR': counts['afr'] += 1
+                    elif prefix == 'FAD': counts['fad'] += 1
+                
+                # Count by status
+                if transfer.status == 'approved': counts['approved'] += 1
+                elif transfer.status == 'rejected': counts['rejected'] += 1
+                elif transfer.status == 'pending': counts['pending'] += 1
+                
+                # Count by status level
+                if 1 <= transfer.status_level <= 4:
+                    counts['levels'][transfer.status_level] += 1
+
+            print(f"Count phase completed in {time.time() - count_start:.2f}s")
+
+            # PHASE 2: Process approved transfers (optimized with prefetch)
+            transfer_start = time.time()
+            
+            # Prefetch related transfers in batches
+            batch_size = 2000
+            approved_transfers = []
+
+            num_processes = multiprocessing.cpu_count() - 1 or 1
+            
+            
+            # We need to process all transfers since we can't filter encrypted status
+            all_transfers = xx_TransactionTransfer.objects.select_related('transaction').only(
+                'transfer_id', 'cost_center_code', 'account_code', 
+                'from_center', 'to_center', 'transaction__status'
+            ).iterator(chunk_size=batch_size) 
+
+            
+            # for i in range(0, all_transfers.count(), batch_size):
+            for transfer in all_transfers:
+                # batch = all_transfers[i:i+batch_size]
+                # for transfer in batch:
+                    if transfer.transaction and transfer.transaction.status == "approved":
+                        approved_transfers.append({
+                            "cost_center_code": transfer.cost_center_code,
+                            "account_code": transfer.account_code,
+                            "from_center": Decimal(transfer.from_center) if transfer.from_center else Decimal(0),
+                            "to_center": Decimal(transfer.to_center) if transfer.to_center else Decimal(0),
+                        })
+            print(f"Transfer processing completed in {time.time() - transfer_start:.2f}s")
+
+
+            print(f"Found {len(approved_transfers)} approved transfers")
+
+            # PHASE 3: Aggregations (single pass through approved transfers)
+            agg_start = time.time()
+            
+            # Initialize aggregators
+            by_cost_center = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            by_account_code = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            by_combination = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            filtered = []
+
+            for transfer in approved_transfers:
+                cc = transfer['cost_center_code']
+                ac = transfer['account_code']
+                from_amt = transfer['from_center']
+                to_amt = transfer['to_center']
+
+                # Update all aggregations in one pass
+                by_cost_center[cc]['from'] += from_amt
+                by_cost_center[cc]['to'] += to_amt
+                
+                by_account_code[ac]['from'] += from_amt
+                by_account_code[ac]['to'] += to_amt
+                
+                combo_key = (cc, ac)
+                by_combination[combo_key]['from'] += from_amt
+                by_combination[combo_key]['to'] += to_amt
+
+                # Apply filters if specified
+                if (not filter_cost_center or cc == filter_cost_center) and \
+                   (not filter_account_code or ac == filter_account_code):
+                    filtered.append(transfer)
+
+            # Convert aggregations to response format
+            cost_center_totals = [{
+                'cost_center_code': k,
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
+            } for k, v in by_cost_center.items()]
+
+            account_code_totals = [{
+                'account_code': k,
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
+            } for k, v in by_account_code.items()]
+
+            all_combinations = [{
+                'cost_center_code': k[0],
+                'account_code': k[1],
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
+            } for k, v in by_combination.items()]
+
+            print(f"Aggregation completed in {time.time() - agg_start:.2f}s")
+            print(f"Total processing time: {time.time() - start_time:.2f}s")
+
+            # Prepare final response
+            return Response({
+                "total_transfers": counts['total'],
+                "total_transfers_far": counts['far'],
+                "total_transfers_afr": counts['afr'],
+                "total_transfers_fad": counts['fad'],
+                "approved_transfers": counts['approved'],
+                "rejected_transfers": counts['rejected'],
+                "pending_transfers": counts['pending'],
+                "filtered_combinations": filtered,
                 "cost_center_totals": cost_center_totals,
                 "account_code_totals": account_code_totals,
                 "all_combinations": all_combinations,
@@ -948,188 +1176,20 @@ class DashboardBudgetTransferView(APIView):
                     "account_code": filter_account_code,
                 },
                 "pending_transfers": {
-                    "Level1": counts['state1'],
-                    "Level2": counts['state2'],
-                    "Level3": counts['state3'],
-                    "Level4": counts['state4'],
+                    "Level1": counts['levels'][1],
+                    "Level2": counts['levels'][2],
+                    "Level3": counts['levels'][3],
+                    "Level4": counts['levels'][4],
                 },
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response(
                 {"error": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-# class DashboardBudgetTransferView(APIView):
-#     """Dashboard view for budget transfers"""
-
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         try:
-#             from django.db.models import Case, When, Count
-#             from collections import defaultdict
-            
-#             # Get filter parameters from query params
-#             filter_cost_center = request.query_params.get("cost_center_code")
-#             filter_account_code = request.query_params.get("account_code")
 
 
 
-#             transactions = xx_BudgetTransfer.objects.all()
-
-#             transactions_list = [
-#                 {
-#                     "transaction_id": transfer.transaction_id,
-#                     "code": transfer.code,
-#                     "status": transfer.status,
-#                     "status_level": transfer.status_level,
-#                     # Add other fields as necessary
-#                 }
-#                 for transfer in transactions
-#             ]
-
-#             total_transfers_far = 0
-#             total_transfers_afr = 0
-#             total_transfers_fad = 0
-#             total_approved_transfers = 0
-#             total_rejected_transfers = 0
-#             total_pending_transfers = 0
-
-#             transfers_State1 = 0
-#             transfers_State2 = 0
-#             transfers_State3 = 0
-#             transfers_State4 = 0
-
-#             for i in transactions_list:
-                
-#                 if i['code'].startswith('FAR'):
-#                     total_transfers_far += 1
-#                 elif i['code'].startswith('AFR'):
-#                     total_transfers_afr += 1
-#                 elif i['code'].startswith('FAD'):
-#                     total_transfers_fad += 1
-
-#                 if i['status'] == 'approved':
-#                     total_approved_transfers += 1
-#                 elif i['status'] == 'rejected':
-#                     total_rejected_transfers += 1
-#                 elif i['status'] == 'pending':
-#                     total_pending_transfers += 1
-
-#                 if i['status_level'] == 1:
-#                     transfers_State1 += 1
-#                 elif i['status_level'] == 2:
-#                     transfers_State2 += 1
-#                 elif i['status_level'] == 3:
-#                     transfers_State3 += 1
-#                 elif i['status_level'] == 4:
-#                     transfers_State4 += 1
-
-#             from_center_query = xx_TransactionTransfer.objects.all()
-
-#             transfers = [
-#                 {
-#                     "transaction": transfer.transaction,
-#                     "transaction_id": transfer.transfer_id,
-#                     "cost_center_code": transfer.cost_center_code,
-#                     "account_code": transfer.account_code,
-#                     "from_center": transfer.from_center,
-#                     "to_center": transfer.to_center,
-#                     # Add other fields as necessary
-#                 }
-#                 for transfer in from_center_query
-#             ]
-            
-#             approved_transfers = []
-#             for transfer in transfers:
-#                 if transfer["transaction_id"] and transfer["transaction"] is not None:
-#                     if transfer["transaction"].status == "approved":
-#                         approved_transfers.append(transfer)
-            
-
-
-#             all_transfers_combined = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-#             for transfer in approved_transfers:
-#                 key = (transfer["cost_center_code"], transfer["account_code"])
-#                 all_transfers_combined[key]["total_from_center"] += Decimal(transfer["from_center"])
-#                 all_transfers_combined[key]["total_to_center"] += Decimal(transfer["to_center"])
-#             all_combinations_data = [
-#                 {
-#                     "cost_center_code": cost_center_code,
-#                     "account_code": account_code,
-#                     "total_from_center": totals["total_from_center"],
-#                     "total_to_center": totals["total_to_center"],
-#                 }
-#                 for (cost_center_code, account_code), totals in all_transfers_combined.items()
-#             ]
-
-
-
-#             all_transfers_cost_center = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-#             for transfer in approved_transfers:
-#                 key = (transfer["cost_center_code"])
-#                 all_transfers_cost_center[key]["total_from_center"] += Decimal(transfer["from_center"])
-#                 all_transfers_cost_center[key]["total_to_center"] += Decimal(transfer["to_center"])
-#             all_transfers_cost_center_data = [
-#                 {
-#                     "cost_center_code": cost_center_code,
-#                     "total_from_center": totals["total_from_center"],
-#                     "total_to_center": totals["total_to_center"],
-#                 }
-#                 for (cost_center_code), totals in all_transfers_cost_center.items()
-#             ]
-
-
-#             all_transfers_account_code = defaultdict(lambda: {"total_from_center": Decimal(0), "total_to_center": Decimal(0)})
-#             for transfer in approved_transfers:
-#                 key = (transfer["account_code"])
-#                 all_transfers_account_code[key]["total_from_center"] += Decimal(transfer["from_center"])
-#                 all_transfers_account_code[key]["total_to_center"] += Decimal(transfer["to_center"])
-#             all_transfers_account_code_data = [
-#                 {
-#                     "cost_center_code": cost_center_code,
-#                     "total_from_center": totals["total_from_center"],
-#                     "total_to_center": totals["total_to_center"],
-#                 }
-#                 for (cost_center_code), totals in all_transfers_account_code.items()
-#             ]
-    
-#             cost_center_totals = [list(all_transfers_cost_center_data)]
-#             account_code_totals = [list(all_transfers_account_code_data)]
-#             all_combinations = [list(all_combinations_data)]
-
-            
-            
-#             from_center_combinations=[]
-#             return Response(
-#                 {
-#                     "total_transfers": len(transactions_list),
-#                     "total_transfers_far": total_transfers_far,
-#                     "total_transfers_afr": total_transfers_afr,
-#                     "total_transfers_fad": total_transfers_fad,
-#                     "approved_transfers": total_approved_transfers,
-#                     "rejected_transfers": total_rejected_transfers,
-#                     "pending_transfers": total_pending_transfers,
-#                     "filtered_combinations": list(from_center_combinations),
-#                     "cost_center_totals": cost_center_totals,
-#                     "account_code_totals": account_code_totals,
-#                     "all_combinations": all_combinations,
-#                     "applied_filters": {
-#                         "cost_center_code": filter_cost_center,
-#                         "account_code": filter_account_code,
-#                     },
-#                     "pending_transfers": {
-#                         "Level1": transfers_State1,
-#                         "Level2": transfers_State2,
-#                         "Level3": transfers_State3,
-#                         "Level4": transfers_State4,
-#                     },
-#                 },
-#                 status=status.HTTP_200_OK,
-#             )
-
-#         except Exception as e:
-#             return Response(
-#                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#             )
