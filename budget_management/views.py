@@ -835,14 +835,16 @@ class DashboardBudgetTransferView(APIView):
             # PHASE 1: Count transfers (optimized single query)
             count_start = time.time()
             transfers = xx_BudgetTransfer.objects.only(
-                'code', 'status', 'status_level'
+                'code', 'status', 'status_level','request_date'
             )
             
             counts = {
                 'total': 0,
                 'far': 0, 'afr': 0, 'fad': 0,
                 'approved': 0, 'rejected': 0, 'pending': 0,
-                'levels': {1: 0, 2: 0, 3: 0, 4: 0}
+                'levels': {1: 0, 2: 0, 3: 0, 4: 0},
+                'request_date': []
+
             }
 
             for transfer in transfers:
@@ -863,6 +865,9 @@ class DashboardBudgetTransferView(APIView):
                 # Count by status level
                 if 1 <= transfer.status_level <= 4:
                     counts['levels'][transfer.status_level] += 1
+                # Collect request dates for further processing
+                if transfer.request_date:
+                    counts['request_date'].append(transfer.request_date)
 
             print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
