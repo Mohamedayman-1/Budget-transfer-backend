@@ -179,7 +179,6 @@ CSRF_TRUSTED_ORIGINS = [  'https://lightidea.org',
     'https://www.lightidea.org',
     'https://lightidea.org:9000',
     'https://budgettransfer.lightidea.org',
-    
 ]
 
 LOGGING = {
@@ -206,6 +205,12 @@ LOGGING = {
             'filename': 'logs/security.log',
             'formatter': 'verbose',
         },
+        'budget_signals_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/budget_signals.log',
+            'formatter': 'verbose',
+        },
     },
     'root': {
         'handlers': ['console'],
@@ -214,6 +219,16 @@ LOGGING = {
         'budget_transfer.middleware.Sqlinjection': {
             'handlers': ['console', 'security_file'],
             'level': 'WARNING',
+            'propagate': False,
+        },
+        'budget_transfer_signals': {
+            'handlers': ['console', 'budget_signals_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'transaction_transfer_signals': {
+            'handlers': ['console', 'budget_signals_file'],
+            'level': 'INFO',
             'propagate': False,
         },
     },

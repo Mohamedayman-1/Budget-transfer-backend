@@ -844,7 +844,6 @@ class DashboardBudgetTransferView(APIView):
                 'approved': 0, 'rejected': 0, 'pending': 0,
                 'levels': {1: 0, 2: 0, 3: 0, 4: 0},
                 'request_date': []
-
             }
 
             for transfer in transfers:
