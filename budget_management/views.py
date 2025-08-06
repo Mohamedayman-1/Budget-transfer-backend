@@ -835,14 +835,15 @@ class DashboardBudgetTransferView(APIView):
             # PHASE 1: Count transfers (optimized single query)
             count_start = time.time()
             transfers = xx_BudgetTransfer.objects.only(
-                'code', 'status', 'status_level'
+                'code', 'status', 'status_level','request_date'
             )
-            
+
             counts = {
                 'total': 0,
                 'far': 0, 'afr': 0, 'fad': 0,
                 'approved': 0, 'rejected': 0, 'pending': 0,
-                'levels': {1: 0, 2: 0, 3: 0, 4: 0}
+                'levels': {1: 0, 2: 0, 3: 0, 4: 0},
+                'request_date': []
             }
 
             for transfer in transfers:
@@ -863,6 +864,9 @@ class DashboardBudgetTransferView(APIView):
                 # Count by status level
                 if 1 <= transfer.status_level <= 4:
                     counts['levels'][transfer.status_level] += 1
+                # Collect request dates for further processing
+                if transfer.request_date:
+                    counts['request_date'].append(transfer.request_date)
 
             print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
@@ -877,16 +881,18 @@ class DashboardBudgetTransferView(APIView):
             
             
             # We need to process all transfers since we can't filter encrypted status
-            all_transfers = xx_TransactionTransfer.objects.select_related('transaction').only(
+            # all_transfers = xx_TransactionTransfer.objects.filter(transaction.status=="approved").select_related('transaction').only(
+            all_transfers = xx_TransactionTransfer.objects.filter(transaction__status="approved").only(
                 'transfer_id', 'cost_center_code', 'account_code', 
                 'from_center', 'to_center', 'transaction__status'
             ).iterator(chunk_size=batch_size) 
 
-            
+   
+
             # for i in range(0, all_transfers.count(), batch_size):
             for transfer in all_transfers:
-                # batch = all_transfers[i:i+batch_size]
-                # for transfer in batch:
+            #     # batch = all_transfers[i:i+batch_size]
+                #  for transfer in batch:
                     if transfer.transaction and transfer.transaction.status == "approved":
                         approved_transfers.append({
                             "cost_center_code": transfer.cost_center_code,
@@ -894,6 +900,9 @@ class DashboardBudgetTransferView(APIView):
                             "from_center": Decimal(transfer.from_center) if transfer.from_center else Decimal(0),
                             "to_center": Decimal(transfer.to_center) if transfer.to_center else Decimal(0),
                         })
+                    
+                        
+
             print(f"Transfer processing completed in {time.time() - transfer_start:.2f}s")
 
 
