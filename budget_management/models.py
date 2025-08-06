@@ -2,6 +2,7 @@ from pyexpat import model
 from django.db import models
 from user_management.models import xx_User
 from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField,EncryptedDateTimeField,EncryptedIntegerField
+import json
 
 
 class xx_BudgetTransfer(models.Model):
@@ -84,3 +85,28 @@ class xx_BudgetTransferRejectReason(models.Model):
         
     def __str__(self):
         return f"Reject Reason for Transfer {self.budget_transfer_id}: {self.reason_text}"
+
+
+
+
+class xx_DashboardBudgetTransfer(models.Model):
+    """Model to store dashboard data for budget transfers"""
+    Dashboard_id = models.AutoField(primary_key=True)
+    data = EncryptedTextField(null=True, blank=True)  # Store JSON as encrypted text
+    date = EncryptedDateTimeField(auto_now_add=True) 
+    
+    def set_data(self, data_dict):
+        """Helper method to store dictionary as JSON string"""
+        self.data = json.dumps(data_dict)
+    
+    def get_data(self):
+        """Helper method to retrieve JSON data as dictionary"""
+        if self.data:
+            return json.loads(self.data)
+        return None
+    
+    class Meta:
+        db_table = 'XX_DASHBOARD_BUDGET_TRANSFER_XX'
+    
+    def __str__(self):
+        return f"Dashboard Data {self.Dashboard_id} from {self.date}"
