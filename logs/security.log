@@ -1,0 +1,6 @@
+WARNING 2025-08-02 02:26:55,423 Sqlinjection 45468 42204 SQL injection in JSON string: ';select * from xx_user where id =1 
+WARNING 2025-08-02 02:26:55,423 Sqlinjection 45468 42204 SQL injection in JSON key 'username' or value: ';select * from xx_user where id =1 
+WARNING 2025-08-02 02:26:55,423 Sqlinjection 45468 42204 SQL injection attempt detected from 127.0.0.1: /api/auth/login/
+WARNING 2025-08-04 04:23:14,077 Sqlinjection 27716 24124 SQL injection in JSON string: ';select * from xx_user where id =1 
+WARNING 2025-08-04 04:23:14,077 Sqlinjection 27716 24124 SQL injection in JSON key 'username' or value: ';select * from xx_user where id =1 
+WARNING 2025-08-04 04:23:14,077 Sqlinjection 27716 24124 SQL injection attempt detected from 127.0.0.1: /api/auth/login/
