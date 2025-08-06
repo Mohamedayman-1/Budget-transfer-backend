@@ -951,6 +951,10 @@ class DashboardBudgetTransferView(APIView):
             } for k, v in by_combination.items()]
 
             print(f"Aggregation completed in {time.time() - agg_start:.2f}s")
+            
+       
+
+
             print(f"Total processing time: {time.time() - start_time:.2f}s")
 
             # Prepare final response
@@ -976,6 +980,7 @@ class DashboardBudgetTransferView(APIView):
                     "Level3": counts['levels'][3],
                     "Level4": counts['levels'][4],
                 },
+              
             }, status=status.HTTP_200_OK)
 
         except Exception as e:

@@ -63,7 +63,7 @@ FIELD_ENCRYPTION_KEY = 'G2g9Xb8qH-SZs-So5QEK1EXmf_lUqHuvdgFnitEtRB0='
 
 
 MIDDLEWARE = [
-    'budget_transfer.middleware.Encryption.EncryptionMiddleware',
+    # 'budget_transfer.middleware.Encryption.EncryptionMiddleware',
     'budget_transfer.middleware.Sqlinjection.SQLInjectionProtectionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
