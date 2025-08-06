@@ -9,7 +9,7 @@ class xx_BudgetTransfer(models.Model):
     transaction_id = models.AutoField(primary_key=True)
     transaction_date = EncryptedCharField(max_length=10)
     amount = EncryptedCharField(max_length=255)
-    status = EncryptedCharField(max_length=10)
+    status = models.CharField(max_length=10)
     requested_by = EncryptedCharField(max_length=10,null=True, blank=True)
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
