@@ -37,54 +37,11 @@ def dashboard_smart():
             filter_cost_center = None
             filter_account_code = None
 
-            # PHASE 1: Count transfers (optimized single query)
-            count_start = time.time()
-            transfers = xx_BudgetTransfer.objects.only(
-                'code', 'status', 'status_level','request_date'
-            )
-
-            counts = {
-                'total': 0,
-                'far': 0, 'afr': 0, 'fad': 0,
-                'approved': 0, 'rejected': 0, 'pending': 0,
-                'levels': {1: 0, 2: 0, 3: 0, 4: 0},
-                'request_date': []
-            }
-
-            for transfer in transfers:
-                counts['total'] += 1
-                
-                # Count by code prefix
-                if transfer.code:
-                    prefix = transfer.code[:3].upper()
-                    if prefix == 'FAR': counts['far'] += 1
-                    elif prefix == 'AFR': counts['afr'] += 1
-                    elif prefix == 'FAD': counts['fad'] += 1
-                
-                # Count by status
-                if transfer.status == 'approved': counts['approved'] += 1
-                elif transfer.status == 'rejected': counts['rejected'] += 1
-                elif transfer.status == 'pending': counts['pending'] += 1
-                
-                # Count by status level
-                if 1 <= transfer.status_level <= 4:
-                    counts['levels'][transfer.status_level] += 1
-                # Collect request dates for further processing
-                if transfer.request_date:
-                    counts['request_date'].append(transfer.request_date)
-
-            print(f"Count phase completed in {time.time() - count_start:.2f}s")
-
-            # PHASE 2: Process approved transfers (optimized with prefetch)
             transfer_start = time.time()
             
             # Prefetch related transfers in batches
             batch_size = 2000
             approved_transfers = []
-
-            num_processes = multiprocessing.cpu_count() - 1 or 1
-            
-            
             # We need to process all transfers since we can't filter encrypted status
             # all_transfers = xx_TransactionTransfer.objects.filter(transaction.status=="approved").select_related('transaction').only(
             all_transfers = xx_TransactionTransfer.objects.filter(transaction__status="approved").only(
@@ -169,13 +126,7 @@ def dashboard_smart():
 
             # Prepare final response
             data={
-                "total_transfers": counts['total'],
-                "total_transfers_far": counts['far'],
-                "total_transfers_afr": counts['afr'],
-                "total_transfers_fad": counts['fad'],
-                "approved_transfers": counts['approved'],
-                "rejected_transfers": counts['rejected'],
-                "pending_transfers": counts['pending'],
+              
                 "filtered_combinations": filtered,
                 "cost_center_totals": cost_center_totals,
                 "account_code_totals": account_code_totals,
@@ -183,12 +134,6 @@ def dashboard_smart():
                 "applied_filters": {
                     "cost_center_code": filter_cost_center,
                     "account_code": filter_account_code,
-                },
-                "pending_transfers": {
-                    "Level1": counts['levels'][1],
-                    "Level2": counts['levels'][2],
-                    "Level3": counts['levels'][3],
-                    "Level4": counts['levels'][4],
                 },
             }
 
@@ -245,8 +190,9 @@ def dashboard_normal():
                 'far': 0, 'afr': 0, 'fad': 0,
                 'approved': 0, 'rejected': 0, 'pending': 0,
                 'levels': {1: 0, 2: 0, 3: 0, 4: 0},
-                'request_date': []
             }
+            request_dates = []
+
 
             for transfer in transfers:
                 counts['total'] += 1
@@ -266,9 +212,9 @@ def dashboard_normal():
                 # Count by status level
                 if 1 <= transfer.status_level <= 4:
                     counts['levels'][transfer.status_level] += 1
-                # Collect request dates for further processing
+                # Collect request dates for further processing (convert to string for JSON serialization)
                 if transfer.request_date:
-                    counts['request_date'].append(transfer.request_date)
+                    request_dates.append(transfer.request_date.isoformat())
 
             print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
@@ -286,6 +232,7 @@ def dashboard_normal():
                     "Level3": counts['levels'][3],
                     "Level4": counts['levels'][4],
                 },
+                "request_dates": request_dates
             }
 
             # Save or update dashboard data (normal version)
