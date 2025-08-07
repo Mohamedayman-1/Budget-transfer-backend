@@ -14,6 +14,7 @@ from budget_management.models import (
     xx_BudgetTransfer,
     xx_BudgetTransferAttachment,
     xx_BudgetTransferRejectReason,
+    xx_DashboardBudgetTransfer,
 )
 from adjd_transaction.models import xx_TransactionTransfer
 import time
@@ -191,7 +192,33 @@ def dashboard_smart():
                 },
             }
 
+            # Save or update dashboard data
+            try:
+                # Get or create the single dashboard record
+                dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
+                    Dashboard_id=1,  # Use single record for all dashboard data
+                    defaults={'data': '{}'}  # Initialize with empty JSON
+                )
+                
+                # Get existing data or initialize empty dict
+                existing_data = dashboard.get_data() or {}
+                
+                # Update the 'smart' key with new data
+                existing_data['smart'] = data
+                
+                # Save updated data back
+                dashboard.set_data(existing_data)
+                dashboard.save()
+                
+                print(f"Smart dashboard data {'created' if created else 'updated'} successfully")
+                return data
+                
+            except Exception as save_error:
+                print(f"Error saving dashboard data: {save_error}")
+                return data  # Return data even if save fails
+
     except Exception as e:
+        print(f"Error in dashboard_smart: {e}")
         return False
     
 
@@ -245,7 +272,6 @@ def dashboard_normal():
 
             print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
-
             data={
                 "total_transfers": counts['total'],
                 "total_transfers_far": counts['far'],
@@ -262,5 +288,91 @@ def dashboard_normal():
                 },
             }
 
+            # Save or update dashboard data (normal version)
+            try:
+                # Get or create the single dashboard record
+                dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
+                    Dashboard_id=1,  # Use same record as smart dashboard
+                    defaults={'data': '{}'}  # Initialize with empty JSON
+                )
+                
+                # Get existing data or initialize empty dict
+                existing_data = dashboard.get_data() or {}
+                
+                # Update the 'normal' key with new data
+                existing_data['normal'] = data
+                
+                # Save updated data back
+                dashboard.set_data(existing_data)
+                dashboard.save()
+                
+                print(f"Normal dashboard data {'created' if created else 'updated'} successfully")
+                return data
+                
+            except Exception as save_error:
+                print(f"Error saving normal dashboard data: {save_error}")
+                return data  # Return data even if save fails
+
     except Exception as e:
+        print(f"Error in dashboard_normal: {e}")
+        return False
+
+
+def get_saved_dashboard_data(dashboard_type='smart'):
+    """
+    Retrieve saved dashboard data from database
+    
+    Args:
+        dashboard_type (str): 'smart' or 'normal'
+    
+    Returns:
+        dict: Dashboard data or None if not found
+    """
+    try:
+        dashboard = xx_DashboardBudgetTransfer.objects.get(Dashboard_id=1)
+        all_data = dashboard.get_data() or {}
+        return all_data.get(dashboard_type)
+    except xx_DashboardBudgetTransfer.DoesNotExist:
+        print(f"No saved dashboard data found")
+        return None
+    except Exception as e:
+        print(f"Error retrieving {dashboard_type} dashboard data: {e}")
+        return None
+
+
+def get_all_dashboard_data():
+    """
+    Retrieve all dashboard data (both smart and normal) from database
+    
+    Returns:
+        dict: All dashboard data or None if not found
+    """
+    try:
+        dashboard = xx_DashboardBudgetTransfer.objects.get(Dashboard_id=1)
+        print("Retrieved dashboard data successfully: ")
+        return dashboard.get_data() or {}
+    except xx_DashboardBudgetTransfer.DoesNotExist:
+        print("No saved dashboard data found")
+        return {}
+    except Exception as e:
+        print(f"Error retrieving dashboard data: {e}")
+        return {}
+
+
+def refresh_dashboard_data(dashboard_type='smart'):
+    """
+    Refresh dashboard data by running the appropriate function and saving to database
+    
+    Args:
+        dashboard_type (str): 'smart' or 'normal'
+    
+    Returns:
+        dict: Updated dashboard data or False if error
+    """
+    if dashboard_type == 'smart':
+        return dashboard_smart()
+    elif dashboard_type == 'normal':
+        return dashboard_normal()
+    else:
+        print(f"Invalid dashboard type: {dashboard_type}")
         return False
