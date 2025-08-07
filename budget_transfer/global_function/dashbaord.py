@@ -190,8 +190,9 @@ def dashboard_normal():
                 'far': 0, 'afr': 0, 'fad': 0,
                 'approved': 0, 'rejected': 0, 'pending': 0,
                 'levels': {1: 0, 2: 0, 3: 0, 4: 0},
-                'request_date': []
             }
+            request_dates = []
+
 
             for transfer in transfers:
                 counts['total'] += 1
@@ -211,9 +212,9 @@ def dashboard_normal():
                 # Count by status level
                 if 1 <= transfer.status_level <= 4:
                     counts['levels'][transfer.status_level] += 1
-                # Collect request dates for further processing
+                # Collect request dates for further processing (convert to string for JSON serialization)
                 if transfer.request_date:
-                    counts['request_date'].append(transfer.request_date)
+                    request_dates.append(transfer.request_date.isoformat())
 
             print(f"Count phase completed in {time.time() - count_start:.2f}s")
 
@@ -231,6 +232,7 @@ def dashboard_normal():
                     "Level3": counts['levels'][3],
                     "Level4": counts['levels'][4],
                 },
+                "request_dates": request_dates
             }
 
             # Save or update dashboard data (normal version)

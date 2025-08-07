@@ -27,8 +27,10 @@ def budget_transfer_post_save(sender, instance, created, **kwargs):
     try:
         # Run dashboard function for ALL saves (create AND update)
         if instance.status == "approved":
+            print("approved enterd")
             dashboard_smart()
         elif instance.status == "pending":
+            print("pending enterd")
             dashboard_normal()
         
         if created:
