@@ -99,26 +99,31 @@ def dashboard_smart():
                 # Apply filters if specified
                 if (not filter_cost_center or cc == filter_cost_center) and \
                    (not filter_account_code or ac == filter_account_code):
-                    filtered.append(transfer)
+                    filtered.append({
+                        "cost_center_code": cc,
+                        "account_code": ac,
+                        "from_center": float(from_amt),
+                        "to_center": float(to_amt),
+                    })
 
             # Convert aggregations to response format
             cost_center_totals = [{
                 'cost_center_code': k,
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
+                'total_from_center': float(v['from']),
+                'total_to_center': float(v['to'])
             } for k, v in by_cost_center.items()]
 
             account_code_totals = [{
                 'account_code': k,
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
+                'total_from_center': float(v['from']),
+                'total_to_center': float(v['to'])
             } for k, v in by_account_code.items()]
 
             all_combinations = [{
                 'cost_center_code': k[0],
                 'account_code': k[1],
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
+                'total_from_center': float(v['from']),
+                'total_to_center': float(v['to'])
             } for k, v in by_combination.items()]
 
             print(f"Aggregation completed in {time.time() - agg_start:.2f}s")
