@@ -26,7 +26,6 @@ from decimal import Decimal
 
 
 def dashboard_smart():
-
     try:
             # import time
             # from collections import defaultdict
@@ -48,6 +47,7 @@ def dashboard_smart():
                 'transfer_id', 'cost_center_code', 'account_code', 
                 'from_center', 'to_center', 'transaction__status'
             ).iterator(chunk_size=batch_size) 
+            
 
    
 
