@@ -1,26 +1,26 @@
 from django.db import models
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField,EncryptedBooleanField
+# Removed encrypted fields import - using standard Django fields now
 
 class XX_Account(models.Model):
     """Model representing ADJD accounts"""
-    account = models.CharField(max_length=255, unique=True)
-    parent = EncryptedCharField(max_length=50, null=True, blank=True)
-    alias_default = EncryptedCharField(max_length=255, null=True, blank=True)
+    account = models.IntegerField(unique=True)
+    parent = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
+    alias_default = models.CharField(max_length=255, null=True, blank=True)  # Changed from EncryptedCharField
     
     def __str__(self):
-        return self.account
-    
+        return str(self.account)
+
     class Meta:
      db_table = 'XX_Account_XX'
 
 class XX_Entity(models.Model):
     """Model representing ADJD entities"""
-    entity = models.CharField(max_length=50)
-    parent = EncryptedCharField(max_length=50, null=True, blank=True)
-    alias_default = EncryptedCharField(max_length=255, null=True, blank=True)
+    entity = models.IntegerField()
+    parent = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
+    alias_default = models.CharField(max_length=255, null=True, blank=True)  # Changed from EncryptedCharField
 
     def __str__(self):
-        return self.entity
+        return str(self.entity)
     
     class Meta:
      db_table = 'XX_Entity_XX'
@@ -31,10 +31,10 @@ class XX_PivotFund(models.Model):
     entity = models.IntegerField()
     account = models.IntegerField()
     year = models.IntegerField()
-    actual = EncryptedCharField(max_length=255, null=True, blank=True)
-    fund = EncryptedCharField( max_length=255, null=True, blank=True)
-    budget = EncryptedCharField(max_length=255,  null=True, blank=True)
-    encumbrance = EncryptedCharField( max_length=255, null=True, blank=True)
+    actual = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    fund = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    encumbrance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
 
 
     class Meta:
@@ -65,13 +65,13 @@ class XX_TransactionAudit(models.Model):
 class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
     """Model representing ADJD account entity limits"""
     id = models.AutoField(primary_key=True)
-    account_id = models.CharField(max_length=255)
-    entity_id = models.CharField(max_length=255)
-    is_transer_allowed_for_source = EncryptedBooleanField(null=True, blank=True)
-    is_transer_allowed_for_target = EncryptedBooleanField(null=True, blank=True)
-    is_transer_allowed = EncryptedBooleanField(null=True, blank=True)
-    source_count = EncryptedIntegerField(null=True, blank=True)
-    target_count = EncryptedIntegerField(null=True, blank=True)
+    account_id = models.IntegerField()
+    entity_id = models.IntegerField()
+    is_transer_allowed_for_source = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
+    is_transer_allowed_for_target = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
+    is_transer_allowed = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
+    source_count = models.IntegerField(null=True, blank=True)  # Changed from EncryptedIntegerField
+    target_count = models.IntegerField(null=True, blank=True)  # Changed from EncryptedIntegerField
 
     def __str__(self):
         return f"Account Entity Limit {self.id}" 

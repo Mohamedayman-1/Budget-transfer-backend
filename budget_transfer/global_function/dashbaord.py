@@ -59,8 +59,8 @@ def dashboard_smart():
                         approved_transfers.append({
                             "cost_center_code": transfer.cost_center_code,
                             "account_code": transfer.account_code,
-                            "from_center": Decimal(transfer.from_center) if transfer.from_center else Decimal(0),
-                            "to_center": Decimal(transfer.to_center) if transfer.to_center else Decimal(0),
+                            "from_center": float(transfer.from_center) if transfer.from_center else 0.0,
+                            "to_center": float(transfer.to_center) if transfer.to_center else 0.0,
                         })
                     
                         
@@ -74,9 +74,9 @@ def dashboard_smart():
             agg_start = time.time()
             
             # Initialize aggregators
-            by_cost_center = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
-            by_account_code = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
-            by_combination = defaultdict(lambda: {'from': Decimal(0), 'to': Decimal(0)})
+            by_cost_center = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
+            by_account_code = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
+            by_combination = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
             filtered = []
 
             for transfer in approved_transfers:
@@ -102,28 +102,28 @@ def dashboard_smart():
                     filtered.append({
                         "cost_center_code": cc,
                         "account_code": ac,
-                        "from_center": float(from_amt),
-                        "to_center": float(to_amt),
+                        "from_center": from_amt,
+                        "to_center": to_amt,
                     })
 
             # Convert aggregations to response format
             cost_center_totals = [{
                 'cost_center_code': k,
-                'total_from_center': float(v['from']),
-                'total_to_center': float(v['to'])
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
             } for k, v in by_cost_center.items()]
 
             account_code_totals = [{
                 'account_code': k,
-                'total_from_center': float(v['from']),
-                'total_to_center': float(v['to'])
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
             } for k, v in by_account_code.items()]
 
             all_combinations = [{
                 'cost_center_code': k[0],
                 'account_code': k[1],
-                'total_from_center': float(v['from']),
-                'total_to_center': float(v['to'])
+                'total_from_center': v['from'],
+                'total_to_center': v['to']
             } for k, v in by_combination.items()]
 
             print(f"Aggregation completed in {time.time() - agg_start:.2f}s")

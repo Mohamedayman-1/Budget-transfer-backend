@@ -1,16 +1,16 @@
 from django.db import models
 from budget_management.models import xx_BudgetTransfer
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField, EncryptedIntegerField, EncryptedBooleanField
+# Removed encrypted fields import - using standard Django fields now
 
 class xx_TransactionTransfer(models.Model):
     """Model for ADJD transaction transfers"""
     transfer_id = models.AutoField(primary_key=True)
     cost_center_code = models.IntegerField(null=True, blank=True)
-    account_name = EncryptedTextField(null=True, blank=True)
-    approved_budget = EncryptedTextField(null=True, blank=True)
-    available_budget = EncryptedTextField(null=True, blank=True)
-    from_center = models.TextField(null=True, blank=True)
-    to_center = models.TextField(null=True, blank=True)
+    account_name = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
+    approved_budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
+    available_budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
+    from_center = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from TextField to DecimalField
+    to_center = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from TextField to DecimalField
     transaction = models.ForeignKey(
         xx_BudgetTransfer,
         on_delete=models.CASCADE,
@@ -19,12 +19,12 @@ class xx_TransactionTransfer(models.Model):
         blank=True,
         related_name='adjd_transfers'
     )
-    reason = EncryptedTextField(null=True, blank=True)
+    reason = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
     account_code = models.IntegerField(null=True, blank=True)
-    cost_center_name = EncryptedTextField(null=True, blank=True)
+    cost_center_name = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
     done = models.IntegerField(default=1)
-    encumbrance = EncryptedTextField(null=True, blank=True)
-    actual = EncryptedTextField(null=True, blank=True)
+    encumbrance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
+    actual = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
     # Additional file field for attachments
     file = models.FileField(upload_to='adjd_transfers/', null=True, blank=True)
     

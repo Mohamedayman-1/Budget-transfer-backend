@@ -1,41 +1,41 @@
 from pyexpat import model
 from django.db import models
 from user_management.models import xx_User
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField,EncryptedDateTimeField,EncryptedIntegerField
+# Removed encrypted fields import - using standard Django fields now
 import json
 
 
 class xx_BudgetTransfer(models.Model):
     """Model to track budget transfers between users"""
     transaction_id = models.AutoField(primary_key=True)
-    transaction_date = EncryptedCharField(max_length=10)
-    amount = EncryptedCharField(max_length=255)
+    transaction_date = models.DateField()  # Changed from EncryptedCharField to DateField
+    amount = models.DecimalField(max_digits=15, decimal_places=2)  # Changed from EncryptedCharField to DecimalField
     status = models.CharField(max_length=10)
-    requested_by = EncryptedCharField(max_length=10,null=True, blank=True)
+    requested_by = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
-    notes = EncryptedCharField(max_length=500,null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)  # Changed from EncryptedCharField to TextField
     code = models.CharField(max_length=10, null=True, blank=True)
-    gl_posting_status = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_1 = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_2 = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_3 = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_4 = EncryptedCharField(max_length=10, null=True, blank=True)
-    approvel_1_date = EncryptedDateTimeField(null=True, blank=True)
-    approvel_2_date = EncryptedDateTimeField(null=True, blank=True)
-    approvel_3_date = EncryptedDateTimeField(null=True, blank=True)
-    approvel_4_date = EncryptedDateTimeField(null=True, blank=True)
+    gl_posting_status = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
+    approvel_1 = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
+    approvel_2 = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
+    approvel_3 = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
+    approvel_4 = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
+    approvel_1_date = models.DateTimeField(null=True, blank=True)  # Changed from EncryptedDateTimeField
+    approvel_2_date = models.DateTimeField(null=True, blank=True)  # Changed from EncryptedDateTimeField
+    approvel_3_date = models.DateTimeField(null=True, blank=True)  # Changed from EncryptedDateTimeField
+    approvel_4_date = models.DateTimeField(null=True, blank=True)  # Changed from EncryptedDateTimeField
     status_level = models.IntegerField(default=1)
-    attachment = EncryptedCharField(max_length=10, null=True, blank=True,default="No")
-    fy = EncryptedIntegerField(null=True, blank=True)
+    attachment = models.CharField(max_length=10, null=True, blank=True, default="No")  # Changed from EncryptedCharField
+    fy = models.IntegerField(null=True, blank=True)  # Changed from EncryptedIntegerField
     group_id = models.IntegerField(null=True, blank=True)
     interface_id = models.IntegerField(null=True, blank=True)
     reject_group_id = models.IntegerField(null=True, blank=True)
     reject_interface_id = models.IntegerField(null=True, blank=True)
     approve_group_id = models.IntegerField(null=True, blank=True)
     approve_interface_id = models.IntegerField(null=True, blank=True)
-    report = EncryptedCharField(max_length=10, null=True, blank=True)  # This one is already small
-    type = EncryptedCharField(max_length=10, null=True, blank=True)
+    report = models.CharField(max_length=10, null=True, blank=True)  # Changed from EncryptedCharField
+    type = models.CharField(max_length=10, null=True, blank=True)  # Changed from EncryptedCharField
     
     class Meta:
         db_table = 'XX_BUDGET_TRANSFER_XX'
@@ -53,8 +53,8 @@ class xx_BudgetTransferAttachment(models.Model):
         related_name='attachments',
         db_column='transaction_id'
     )
-    file_name = EncryptedCharField(max_length=255)
-    file_type = EncryptedCharField(max_length=100)
+    file_name = models.CharField(max_length=255)  # Changed from EncryptedCharField
+    file_type = models.CharField(max_length=100)  # Changed from EncryptedCharField
     file_size = models.IntegerField()
     file_data = models.BinaryField()  # This will store the BLOB data
     upload_date = models.DateTimeField(auto_now_add=True)
@@ -73,11 +73,11 @@ class xx_BudgetTransferRejectReason(models.Model):
         on_delete=models.CASCADE,
         related_name='reject_reasons'
     )
-    reason_text = EncryptedCharField(max_length=500,null=True, blank=True)
+    reason_text = models.TextField(null=True, blank=True)  # Changed from EncryptedCharField to TextField
 
-    reject_date = EncryptedDateTimeField(auto_now_add=True)
+    reject_date = models.DateTimeField(auto_now_add=True)  # Changed from EncryptedDateTimeField
 
-    reject_by = EncryptedCharField(max_length=25, null=False, blank=True)
+    reject_by = models.CharField(max_length=100, null=False, blank=True)  # Changed from EncryptedCharField
 
 
     class Meta:
@@ -92,8 +92,8 @@ class xx_BudgetTransferRejectReason(models.Model):
 class xx_DashboardBudgetTransfer(models.Model):
     """Model to store dashboard data for budget transfers"""
     Dashboard_id = models.AutoField(primary_key=True)
-    data = EncryptedTextField(null=True, blank=True)  # Store JSON as encrypted text
-    date = EncryptedDateTimeField(auto_now_add=True) 
+    data = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField - Store JSON as text
+    date = models.DateTimeField(auto_now_add=True)  # Changed from EncryptedDateTimeField
     
     def set_data(self, data_dict):
         """Helper method to store dictionary as JSON string"""

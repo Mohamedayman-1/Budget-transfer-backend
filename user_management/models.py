@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from encrypted_model_fields.fields import EncryptedCharField, EncryptedTextField,EncryptedDateTimeField,EncryptedIntegerField, EncryptedBooleanField
+# Removed encrypted fields import - using standard Django fields now
 
 class xx_UserManager(BaseUserManager):
     def create_user(self, username, password=None, role='user', user_level=None):
@@ -47,7 +47,7 @@ class xx_UserManager(BaseUserManager):
 class xx_UserLevel(models.Model):
     """Model to represent user levels/roles in the system."""
     name = models.CharField(max_length=50, unique=True)
-    description = EncryptedTextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
     level_order = models.PositiveIntegerField(default=1, help_text="Order of the level for hierarchy")
 
     class Meta:
@@ -98,7 +98,7 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
 class xx_notification(models.Model):
     """Model to represent notifications for users."""
     user = models.ForeignKey(xx_User, on_delete=models.CASCADE, related_name='notifications')
-    message = EncryptedTextField()
+    message = models.TextField()  # Changed from EncryptedTextField
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     is_system_read = models.BooleanField(default=False)  # For tracking if the notification was read on the OS system
