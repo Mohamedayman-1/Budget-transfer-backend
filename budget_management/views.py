@@ -55,7 +55,6 @@ class TransferPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
-
 class CreateBudgetTransferView(APIView):
     """Create budget transfers"""
 
@@ -138,7 +137,6 @@ class CreateBudgetTransferView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class ListBudgetTransferView(APIView):
     """List budget transfers with pagination"""
 
@@ -167,7 +165,6 @@ class ListBudgetTransferView(APIView):
         paginated_transfers = paginator.paginate_queryset(transfers, request)
         serializer = BudgetTransferSerializer(paginated_transfers, many=True)
         return paginator.get_paginated_response(serializer.data)
-
 
 class ListBudgetTransfer_approvels_View(APIView):
     """List budget transfers with pagination"""
@@ -218,7 +215,6 @@ class ListBudgetTransfer_approvels_View(APIView):
 
         return paginator.get_paginated_response(filtered_data)
 
-
 class ApproveBudgetTransferView(APIView):
     """Approve or reject budget transfer requests (admin only)"""
 
@@ -266,7 +262,6 @@ class ApproveBudgetTransferView(APIView):
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-
 class GetBudgetTransferView(APIView):
     """Get a specific budget transfer by ID"""
 
@@ -298,7 +293,6 @@ class GetBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 
 class UpdateBudgetTransferView(APIView):
     """Update a budget transfer"""
@@ -380,7 +374,6 @@ class UpdateBudgetTransferView(APIView):
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-
 class DeleteBudgetTransferView(APIView):
     """Delete a specific budget transfer by ID"""
 
@@ -416,7 +409,6 @@ class DeleteBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 
 class Adjdtranscationtransferapprovel_reject(APIView):
     """Submit ADJD transaction transfers for approval"""
@@ -587,7 +579,6 @@ class Adjdtranscationtransferapprovel_reject(APIView):
             status=status.HTTP_200_OK,
         )
 
-
 class BudgetTransferFileUploadView(APIView):
     """Upload files for a budget transfer and store as BLOBs"""
 
@@ -661,7 +652,6 @@ class BudgetTransferFileUploadView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-
 
 class DeleteBudgetTransferAttachmentView(APIView):
     """Delete a specific file attachment from a budget transfer"""
@@ -747,7 +737,6 @@ class DeleteBudgetTransferAttachmentView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-
 class ListBudgetTransferAttachmentsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -787,7 +776,6 @@ class ListBudgetTransferAttachmentsView(APIView):
                 {"error": "Transfer not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-
 class list_budget_transfer_reject_reason(APIView):
     """List all budget transfer reject reasons"""
 
@@ -813,14 +801,6 @@ class list_budget_transfer_reject_reason(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-
-
-
-
-
-
 
 class DashboardBudgetTransferView(APIView):
     """Optimized dashboard view for encrypted budget transfers"""
