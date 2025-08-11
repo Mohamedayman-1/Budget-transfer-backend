@@ -505,10 +505,16 @@ class list_ACCOUNT_ENTITY_LIMIT(APIView):
     def get(self, request):
         # Change "enity_id" to "entity_id"
         entity_id = request.query_params.get('cost_center')
+        account_id = request.query_params.get('account_id')
+
+        
 
         audit_records = XX_ACCOUNT_ENTITY_LIMIT.objects.filter(
             entity_id=entity_id
         ).order_by('-id')
+
+        if account_id:
+            audit_records = audit_records.filter(account_id=account_id)
         
         # Handle pagination
         paginator = self.pagination_class()

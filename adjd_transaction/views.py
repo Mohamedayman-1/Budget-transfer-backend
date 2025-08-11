@@ -110,23 +110,23 @@ def validate_adjd_transcation_transfer(data, code=None, errors=None):
     allowed_to_make_transfer = XX_ACCOUNT_ENTITY_LIMIT.objects.filter(
         entity_id=data["cost_center_code"], account_id=data["account_code"]
     ).first()
-    if not allowed_to_make_transfer:
+    if allowed_to_make_transfer == "No":
         errors.append(
             f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules ( can't use this account and cost center to make transfer)"
         )
-    if allowed_to_make_transfer.is_transer_allowed == False:
+    if allowed_to_make_transfer.is_transer_allowed == "No":
         errors.append(
             f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules"
         )
     else:
-        allowed_to_make_transfer.is_transer_allowed == True
+        allowed_to_make_transfer.is_transer_allowed == "Yes"
         if data["from_center"] > 0:
-            if allowed_to_make_transfer.is_transer_allowed_for_source != True:
+            if allowed_to_make_transfer.is_transer_allowed_for_source != "Yes":
                 errors.append(
                     f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules (can't transfer from this account)"
                 )
         if data["to_center"] > 0:
-            if allowed_to_make_transfer.is_transer_allowed_for_target != True:
+            if allowed_to_make_transfer.is_transer_allowed_for_target != "Yes":
                 errors.append(
                     f"Not allowed to make transfer for {data['cost_center_code']} and {data['account_code']} according to the rules (can't transfer to this account)"
                 )
