@@ -8,7 +8,7 @@ import json
 class xx_BudgetTransfer(models.Model):
     """Model to track budget transfers between users"""
     transaction_id = models.AutoField(primary_key=True)
-    transaction_date = models.DateField()  # Changed from EncryptedCharField to DateField
+    transaction_date = models.CharField(max_length=10)  # Changed from EncryptedCharField to DateField
     amount = models.DecimalField(max_digits=15, decimal_places=2)  # Changed from EncryptedCharField to DecimalField
     status = models.CharField(max_length=10)
     requested_by = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
