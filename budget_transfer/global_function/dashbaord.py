@@ -6,9 +6,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
-from django.db.models import Q, Sum
-from django.db.models.functions import Cast
-from django.db.models import CharField
+from django.db.models import Q, Sum, Count, Case, When, Value, F
+from django.db.models.functions import Cast, Substr, Upper
+from django.db.models import CharField, DecimalField
 from user_management.models import xx_notification
 from budget_management.models import (
     xx_BudgetTransfer,
@@ -25,248 +25,247 @@ from decimal import Decimal
 
 
 
-def dashboard_smart():
+def dashboard_smart(filter_cost_center=None, filter_account_code=None):
+    """
+    Optimized smart dashboard using database-level aggregations
+    
+    Args:
+        filter_cost_center (int, optional): Filter by specific cost center code
+        filter_account_code (int, optional): Filter by specific account code
+    
+    Returns:
+        dict: Dashboard data with optional filters applied
+    """
     try:
-            # import time
-            # from collections import defaultdict
-            # from decimal import Decimal
-            start_time = time.time()
+        start_time = time.time()
 
-            # Get filter parameters
-            filter_cost_center = None
-            filter_account_code = None
+        print("Starting optimized smart dashboard calculation...")
+        if filter_cost_center or filter_account_code:
+            print(f"Filters applied: cost_center={filter_cost_center}, account_code={filter_account_code}")
 
-            transfer_start = time.time()
-            
-            # Prefetch related transfers in batches
-            batch_size = 2000
-            approved_transfers = []
-            # We need to process all transfers since we can't filter encrypted status
-            # all_transfers = xx_TransactionTransfer.objects.filter(transaction.status=="approved").select_related('transaction').only(
-            all_transfers = xx_TransactionTransfer.objects.filter(transaction__status="approved").only(
-                'transfer_id', 'cost_center_code', 'account_code', 
-                'from_center', 'to_center', 'transaction__status'
-            ).iterator(chunk_size=batch_size) 
-            
+        # PHASE 1: Database-level aggregations for approved transfers
+        aggregation_start = time.time()
+        
+        # Build base queryset with optimized filtering
+        base_queryset = xx_TransactionTransfer.objects.select_related('transaction').filter(
+            transaction__status="approved"
+        )
+        
+        # Apply additional filters if provided
+        if filter_cost_center:
+            base_queryset = base_queryset.filter(cost_center_code=filter_cost_center)
+        if filter_account_code:
+            base_queryset = base_queryset.filter(account_code=filter_account_code)
 
-   
+        # Aggregate by cost center code (single database query)
+        cost_center_totals = list(base_queryset.values('cost_center_code').annotate(
+            total_from_center=Sum('from_center'),
+            total_to_center=Sum('to_center')
+        ).order_by('cost_center_code'))
 
-            # for i in range(0, all_transfers.count(), batch_size):
-            for transfer in all_transfers:
-            #     # batch = all_transfers[i:i+batch_size]
-                #  for transfer in batch:
-                    if transfer.transaction and transfer.transaction.status == "approved":
-                        approved_transfers.append({
-                            "cost_center_code": transfer.cost_center_code,
-                            "account_code": transfer.account_code,
-                            "from_center": float(transfer.from_center) if transfer.from_center else 0.0,
-                            "to_center": float(transfer.to_center) if transfer.to_center else 0.0,
-                        })
-                    
-                        
+        # Aggregate by account code (single database query)
+        account_code_totals = list(base_queryset.values('account_code').annotate(
+            total_from_center=Sum('from_center'),
+            total_to_center=Sum('to_center')
+        ).order_by('account_code'))
 
-            print(f"Transfer processing completed in {time.time() - transfer_start:.2f}s")
+        # Aggregate by combination of cost center and account code (single database query)
+        all_combinations = list(base_queryset.values('cost_center_code', 'account_code').annotate(
+            total_from_center=Sum('from_center'),
+            total_to_center=Sum('to_center')
+        ).order_by('cost_center_code', 'account_code'))
 
+        # Get filtered individual records if filters are applied
+        if filter_cost_center or filter_account_code:
+            filtered_combinations = list(base_queryset.values(
+                'cost_center_code', 'account_code', 'from_center', 'to_center'
+            ))
+        else:
+            # If no filters, use aggregated data to avoid large result sets
+            filtered_combinations = all_combinations
 
-            print(f"Found {len(approved_transfers)} approved transfers")
+        print(f"Database aggregations completed in {time.time() - aggregation_start:.2f}s")
 
-            # PHASE 3: Aggregations (single pass through approved transfers)
-            agg_start = time.time()
-            
-            # Initialize aggregators
-            by_cost_center = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
-            by_account_code = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
-            by_combination = defaultdict(lambda: {'from': 0.0, 'to': 0.0})
-            filtered = []
+        # PHASE 2: Format response data
+        format_start = time.time()
+        
+        # Convert Decimal to float for JSON serialization
+        for item in cost_center_totals:
+            item['total_from_center'] = float(item['total_from_center'] or 0)
+            item['total_to_center'] = float(item['total_to_center'] or 0)
 
-            for transfer in approved_transfers:
-                cc = transfer['cost_center_code']
-                ac = transfer['account_code']
-                from_amt = transfer['from_center']
-                to_amt = transfer['to_center']
+        for item in account_code_totals:
+            item['total_from_center'] = float(item['total_from_center'] or 0)
+            item['total_to_center'] = float(item['total_to_center'] or 0)
 
-                # Update all aggregations in one pass
-                by_cost_center[cc]['from'] += from_amt
-                by_cost_center[cc]['to'] += to_amt
-                
-                by_account_code[ac]['from'] += from_amt
-                by_account_code[ac]['to'] += to_amt
-                
-                combo_key = (cc, ac)
-                by_combination[combo_key]['from'] += from_amt
-                by_combination[combo_key]['to'] += to_amt
+        for item in all_combinations:
+            item['total_from_center'] = float(item['total_from_center'] or 0)
+            item['total_to_center'] = float(item['total_to_center'] or 0)
 
-                # Apply filters if specified
-                if (not filter_cost_center or cc == filter_cost_center) and \
-                   (not filter_account_code or ac == filter_account_code):
-                    filtered.append({
-                        "cost_center_code": cc,
-                        "account_code": ac,
-                        "from_center": from_amt,
-                        "to_center": to_amt,
-                    })
+        # Convert filtered combinations
+        for item in filtered_combinations:
+            if 'from_center' in item:  # Individual records
+                item['from_center'] = float(item['from_center'] or 0)
+                item['to_center'] = float(item['to_center'] or 0)
 
-            # Convert aggregations to response format
-            cost_center_totals = [{
-                'cost_center_code': k,
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
-            } for k, v in by_cost_center.items()]
+        print(f"Data formatting completed in {time.time() - format_start:.2f}s")
 
-            account_code_totals = [{
-                'account_code': k,
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
-            } for k, v in by_account_code.items()]
-
-            all_combinations = [{
-                'cost_center_code': k[0],
-                'account_code': k[1],
-                'total_from_center': v['from'],
-                'total_to_center': v['to']
-            } for k, v in by_combination.items()]
-
-            print(f"Aggregation completed in {time.time() - agg_start:.2f}s")
-            print(f"Total processing time: {time.time() - start_time:.2f}s")
-
-            # Prepare final response
-            data={
-              
-                "filtered_combinations": filtered,
-                "cost_center_totals": cost_center_totals,
-                "account_code_totals": account_code_totals,
-                "all_combinations": all_combinations,
-                "applied_filters": {
-                    "cost_center_code": filter_cost_center,
-                    "account_code": filter_account_code,
-                },
+        # Prepare final response
+        data = {
+            "filtered_combinations": filtered_combinations,
+            "cost_center_totals": cost_center_totals,
+            "account_code_totals": account_code_totals,
+            "all_combinations": all_combinations,
+            "applied_filters": {
+                "cost_center_code": filter_cost_center,
+                "account_code": filter_account_code,
+            },
+            "performance_metrics": {
+                "total_processing_time": round(time.time() - start_time, 2),
+                "aggregation_time": round(time.time() - aggregation_start, 2),
+                "cost_center_groups": len(cost_center_totals),
+                "account_code_groups": len(account_code_totals),
+                "total_combinations": len(all_combinations)
             }
+        }
 
-            # Save or update dashboard data
-            try:
-                # Get or create the single dashboard record
-                dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
-                    Dashboard_id=1,  # Use single record for all dashboard data
-                    defaults={'data': '{}'}  # Initialize with empty JSON
-                )
-                
-                # Get existing data or initialize empty dict
-                existing_data = dashboard.get_data() or {}
-                
-                # Update the 'smart' key with new data
-                existing_data['smart'] = data
-                
-                # Save updated data back
-                dashboard.set_data(existing_data)
-                dashboard.save()
-                
-                print(f"Smart dashboard data {'created' if created else 'updated'} successfully")
-                return data
-                
-            except Exception as save_error:
-                print(f"Error saving dashboard data: {save_error}")
-                return data  # Return data even if save fails
+        print(f"Total optimized processing time: {time.time() - start_time:.2f}s")
+        print(f"Found {len(cost_center_totals)} cost centers, {len(account_code_totals)} account codes")
+
+        # Save dashboard data
+        save_start = time.time()
+        try:
+            dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
+                Dashboard_id=1,
+                defaults={'data': '{}'}
+            )
+            
+            existing_data = dashboard.get_data() or {}
+            existing_data['smart'] = data
+            
+            dashboard.set_data(existing_data)
+            dashboard.save()
+            
+            print(f"Dashboard data saved in {time.time() - save_start:.2f}s")
+            print(f"Smart dashboard data {'created' if created else 'updated'} successfully")
+            return data
+            
+        except Exception as save_error:
+            print(f"Error saving dashboard data: {save_error}")
+            return data
 
     except Exception as e:
-        print(f"Error in dashboard_smart: {e}")
+        print(f"Error in optimized dashboard_smart: {e}")
+        import traceback
+        traceback.print_exc()
         return False
-    
 
 def dashboard_normal():
-     
+    """
+    Optimized normal dashboard using database-level aggregations and counting
+    """
     try:
-            # import time
-            # from collections import defaultdict
-            # from decimal import Decimal
-            start_time = time.time()
+        start_time = time.time()
+        print("Starting optimized normal dashboard calculation...")
 
-            # Get filter parameters
-            filter_cost_center = None
-            filter_account_code = None
+        # PHASE 1: Database-level counting and aggregations
+        count_start = time.time()
 
-            # PHASE 1: Count transfers (optimized single query)
-            count_start = time.time()
-            transfers = xx_BudgetTransfer.objects.only(
-                'code', 'status', 'status_level','request_date'
+        # Get all transfers with minimal data loading
+        transfers_queryset = xx_BudgetTransfer.objects.only(
+            'code', 'status', 'status_level', 'request_date'
+        )
+
+        # Use database aggregations for counting
+        total_count = transfers_queryset.count()
+        
+        # Count by status using database aggregation
+        status_counts = transfers_queryset.aggregate(
+            approved=Count('transaction_id', filter=Q(status='approved')),
+            rejected=Count('transaction_id', filter=Q(status='rejected')),
+            pending=Count('transaction_id', filter=Q(status='pending'))
+        )
+
+        # Count by status level using database aggregation
+        level_counts = transfers_queryset.aggregate(
+            level1=Count('transaction_id', filter=Q(status_level=1)),
+            level2=Count('transaction_id', filter=Q(status_level=2)),
+            level3=Count('transaction_id', filter=Q(status_level=3)),
+            level4=Count('transaction_id', filter=Q(status_level=4))
+        )
+
+        # Count by code prefix using database functions
+        code_counts = transfers_queryset.aggregate(
+            far=Count('transaction_id', filter=Q(code__istartswith='FAR')),
+            afr=Count('transaction_id', filter=Q(code__istartswith='AFR')),
+            fad=Count('transaction_id', filter=Q(code__istartswith='FAD'))
+        )
+
+        # Get request dates efficiently (only non-null dates)
+        request_dates = list(
+            transfers_queryset.filter(request_date__isnull=False)
+            .values_list('request_date', flat=True)
+            .order_by('-request_date')[:1000]  # Limit to recent 1000 for performance
+        )
+
+        # Convert datetime objects to ISO format strings for JSON serialization
+        request_dates_iso = [date.isoformat() for date in request_dates]
+
+        print(f"Database counting completed in {time.time() - count_start:.2f}s")
+
+        # PHASE 2: Format response data
+        data = {
+            "total_transfers": total_count,
+            "total_transfers_far": code_counts['far'],
+            "total_transfers_afr": code_counts['afr'],
+            "total_transfers_fad": code_counts['fad'],
+            "approved_transfers": status_counts['approved'],
+            "rejected_transfers": status_counts['rejected'],
+            "pending_transfers": status_counts['pending'],
+            "pending_transfers_by_level": {
+                "Level1": level_counts['level1'],
+                "Level2": level_counts['level2'],
+                "Level3": level_counts['level3'],
+                "Level4": level_counts['level4'],
+            },
+            "request_dates": request_dates_iso,
+            "performance_metrics": {
+                "total_processing_time": round(time.time() - start_time, 2),
+                "counting_time": round(time.time() - count_start, 2),
+                "total_records_processed": total_count,
+                "request_dates_retrieved": len(request_dates_iso)
+            }
+        }
+
+        print(f"Total optimized processing time: {time.time() - start_time:.2f}s")
+        print(f"Processed {total_count} transfers")
+
+        # Save dashboard data
+        save_start = time.time()
+        try:
+            dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
+                Dashboard_id=1,
+                defaults={'data': '{}'}
             )
-
-            counts = {
-                'total': 0,
-                'far': 0, 'afr': 0, 'fad': 0,
-                'approved': 0, 'rejected': 0, 'pending': 0,
-                'levels': {1: 0, 2: 0, 3: 0, 4: 0},
-            }
-            request_dates = []
-
-
-            for transfer in transfers:
-                counts['total'] += 1
-                
-                # Count by code prefix
-                if transfer.code:
-                    prefix = transfer.code[:3].upper()
-                    if prefix == 'FAR': counts['far'] += 1
-                    elif prefix == 'AFR': counts['afr'] += 1
-                    elif prefix == 'FAD': counts['fad'] += 1
-                
-                # Count by status
-                if transfer.status == 'approved': counts['approved'] += 1
-                elif transfer.status == 'rejected': counts['rejected'] += 1
-                elif transfer.status == 'pending': counts['pending'] += 1
-                
-                # Count by status level
-                if 1 <= transfer.status_level <= 4:
-                    counts['levels'][transfer.status_level] += 1
-                # Collect request dates for further processing (convert to string for JSON serialization)
-                if transfer.request_date:
-                    request_dates.append(transfer.request_date.isoformat())
-
-            print(f"Count phase completed in {time.time() - count_start:.2f}s")
-
-            data={
-                "total_transfers": counts['total'],
-                "total_transfers_far": counts['far'],
-                "total_transfers_afr": counts['afr'],
-                "total_transfers_fad": counts['fad'],
-                "approved_transfers": counts['approved'],
-                "rejected_transfers": counts['rejected'],
-                "pending_transfers": counts['pending'],
-                "pending_transfers": {
-                    "Level1": counts['levels'][1],
-                    "Level2": counts['levels'][2],
-                    "Level3": counts['levels'][3],
-                    "Level4": counts['levels'][4],
-                },
-                "request_dates": request_dates
-            }
-
-            # Save or update dashboard data (normal version)
-            try:
-                # Get or create the single dashboard record
-                dashboard, created = xx_DashboardBudgetTransfer.objects.get_or_create(
-                    Dashboard_id=1,  # Use same record as smart dashboard
-                    defaults={'data': '{}'}  # Initialize with empty JSON
-                )
-                
-                # Get existing data or initialize empty dict
-                existing_data = dashboard.get_data() or {}
-                
-                # Update the 'normal' key with new data
-                existing_data['normal'] = data
-                
-                # Save updated data back
-                dashboard.set_data(existing_data)
-                dashboard.save()
-                
-                print(f"Normal dashboard data {'created' if created else 'updated'} successfully")
-                return data
-                
-            except Exception as save_error:
-                print(f"Error saving normal dashboard data: {save_error}")
-                return data  # Return data even if save fails
+            
+            existing_data = dashboard.get_data() or {}
+            existing_data['normal'] = data
+            
+            dashboard.set_data(existing_data)
+            dashboard.save()
+            
+            print(f"Dashboard data saved in {time.time() - save_start:.2f}s")
+            print(f"Normal dashboard data {'created' if created else 'updated'} successfully")
+            return data
+            
+        except Exception as save_error:
+            print(f"Error saving normal dashboard data: {save_error}")
+            return data
 
     except Exception as e:
-        print(f"Error in dashboard_normal: {e}")
+        print(f"Error in optimized dashboard_normal: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -301,7 +300,7 @@ def get_all_dashboard_data():
     """
     try:
         dashboard = xx_DashboardBudgetTransfer.objects.get(Dashboard_id=1)
-        print("Retrieved dashboard data successfully: ")
+        print("Retrieved dashboard data successfully")
         return dashboard.get_data() or {}
     except xx_DashboardBudgetTransfer.DoesNotExist:
         print("No saved dashboard data found")
@@ -328,3 +327,5 @@ def refresh_dashboard_data(dashboard_type='smart'):
     else:
         print(f"Invalid dashboard type: {dashboard_type}")
         return False
+
+
