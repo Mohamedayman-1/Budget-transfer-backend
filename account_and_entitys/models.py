@@ -25,7 +25,6 @@ class XX_Entity(models.Model):
     class Meta:
      db_table = 'XX_Entity_XX'
 
-
 class XX_PivotFund(models.Model):
     """Model representing ADJD pivot funds"""
     entity = models.IntegerField()
@@ -60,7 +59,6 @@ class XX_TransactionAudit(models.Model):
     
     class Meta:
         db_table = 'XX_TRANSACTION_AUDIT_XX'
-
 
 class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
     """Model representing ADJD account entity limits"""

@@ -29,9 +29,9 @@ def budget_transfer_post_save(sender, instance, created, **kwargs):
         if instance.status == "approved":
             print("approved enterd")
             dashboard_smart()
-        elif instance.status == "pending":
-            print("pending enterd")
-            dashboard_normal()
+        # elif instance.status == "pending":
+        print("pending enterd")
+        dashboard_normal()
         
         if created:
             logger.info(f"New BudgetTransfer created: {instance.transaction_id} - Dashboard updated")
