@@ -155,9 +155,7 @@ class ListBudgetTransferView(APIView):
         else:
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
         if code:
-            # transfers = transfers.annotate(
-            #     code_str=Cast('code', output_field=CharField(max_length=10))
-            # )
+            
             transfers = transfers.filter(code__icontains=code)
 
         transfers = transfers.order_by("-request_date")
@@ -185,7 +183,7 @@ class ListBudgetTransfer_approvels_View(APIView):
             else 0
         )
         transfers = xx_BudgetTransfer.objects.filter(
-            status_level=status_level_val, code__startswith=code
+            status_level=status_level_val, code__startswith=code,status= "pending"
         )
 
         if code:

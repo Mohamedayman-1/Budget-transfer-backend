@@ -4,6 +4,7 @@ import re
 import logging
 import json
 from django.http import HttpResponseBadRequest
+from django.http.request import RawPostDataException
 from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
@@ -61,30 +62,62 @@ class SQLInjectionProtectionMiddleware(MiddlewareMixin):
         """
         Check if request contains potential SQL injection
         """
+        # Normalize content type (ignore charset, etc.)
+        content_type = (request.content_type or '').split(';')[0].lower()
+
         # Check GET parameters
         for key, value in request.GET.items():
             if self.is_malicious(value):
                 logger.warning(f"SQL injection in GET parameter '{key}': {value}")
                 return True
-        
-        # Check POST data if it's form data
-        if hasattr(request, 'POST'):
-            for key, value in request.POST.items():
-                if self.is_malicious(value):
-                    logger.warning(f"SQL injection in POST parameter '{key}': {value}")
-                    return True
-        
-        # Check JSON body data
-        if hasattr(request, 'body') and request.content_type == 'application/json':
-            try:
-                json_data = json.loads(request.body.decode('utf-8'))
-                if self.check_json_data(json_data):
-                    return True
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # If we can't parse JSON, check the raw body
-                if self.is_malicious(request.body.decode('utf-8', errors='ignore')):
-                    logger.warning(f"SQL injection in request body: {request.body.decode('utf-8', errors='ignore')}")
-                    return True
+
+        # Only inspect one source based on content type to avoid consuming the stream twice
+        try:
+            if content_type == 'application/json':
+                # Safely inspect JSON body without touching request.POST
+                try:
+                    body_bytes = request.body  # May raise RawPostDataException if already consumed
+                    json_data = json.loads(body_bytes.decode('utf-8'))
+                    if self.check_json_data(json_data):
+                        return True
+                except RawPostDataException:
+                    # Body already consumed (e.g., by previous middleware) — skip JSON inspection
+                    logger.debug("Skipping JSON body inspection: raw post data already consumed")
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    # If we can't parse JSON, check the raw body (best-effort)
+                    try:
+                        raw = body_bytes.decode('utf-8', errors='ignore')
+                        if self.is_malicious(raw):
+                            logger.warning(f"SQL injection in request body: {raw}")
+                            return True
+                    except Exception:
+                        pass
+
+            elif content_type.startswith('multipart/'):
+                # File uploads: never touch request.body; only inspect form fields
+                for key, value in request.POST.items():
+                    if self.is_malicious(value):
+                        logger.warning(f"SQL injection in multipart POST parameter '{key}': {value}")
+                        return True
+
+            elif content_type in ('application/x-www-form-urlencoded', 'text/plain'):
+                # Regular forms: POST is safe to read; avoid body access
+                for key, value in request.POST.items():
+                    if self.is_malicious(value):
+                        logger.warning(f"SQL injection in POST parameter '{key}': {value}")
+                        return True
+            else:
+                # Fallback: attempt to read body if available and not consumed
+                try:
+                    raw = request.body.decode('utf-8', errors='ignore')
+                    if raw and self.is_malicious(raw):
+                        logger.warning(f"SQL injection in raw request body: {raw}")
+                        return True
+                except RawPostDataException:
+                    logger.debug("Skipping raw body inspection: raw post data already consumed")
+        except Exception:
+            # Be conservative; do not block the request on middleware inspection errors
+            logger.debug("SQL injection inspection encountered a non-fatal error", exc_info=True)
         
         # Check path (be more lenient with paths)
         if self.is_malicious_path(request.path):

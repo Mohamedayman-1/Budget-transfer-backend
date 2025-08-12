@@ -371,9 +371,11 @@ class AdjdTransactionTransferListView(APIView):
             total_from_center = sum(float(value) if value != '' else 0 for value in from_center_values)
             total_to_center = sum(float(value) if value != '' else 0 for value in to_center_values)
 
+
+
             if total_from_center == total_to_center:
                 transaction_object.amount = total_from_center
-                transaction_object.save()
+                xx_BudgetTransfer.objects.filter(pk=transaction_id).update(amount=total_from_center)
 
             if transaction_object.code[0:3] == "AFR":
                 summary = {
