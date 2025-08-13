@@ -514,7 +514,7 @@ class list_ACCOUNT_ENTITY_LIMIT(APIView):
         ).order_by('-id')
 
         if account_id:
-            audit_records = audit_records.filter(account_id=account_id)
+            audit_records = audit_records.filter(account_id_str__icontains=str(account_id))
         
         # Handle pagination
         paginator = self.pagination_class()
