@@ -15,7 +15,8 @@ import pandas as pd
 from django.db import transaction
 from .models import XX_ACCOUNT_ENTITY_LIMIT
 from .serializers import AccountEntityLimitSerializer
-
+from django.db.models import CharField
+from django.db.models.functions import Cast
 class EntityPagination(PageNumberPagination):
     """Pagination class for entities and accounts"""
     page_size = 10
@@ -507,14 +508,13 @@ class list_ACCOUNT_ENTITY_LIMIT(APIView):
         entity_id = request.query_params.get('cost_center')
         account_id = request.query_params.get('account_id')
 
-        
-
         audit_records = XX_ACCOUNT_ENTITY_LIMIT.objects.filter(
             entity_id=entity_id
         ).order_by('-id')
+        audit_records = audit_records.annotate(account_id_str=Cast('account_id', CharField()))
 
         if account_id:
-            audit_records = audit_records.filter(account_id=account_id)
+            audit_records = audit_records.filter(account_id_str__icontains=str(account_id))
         
         # Handle pagination
         paginator = self.pagination_class()
