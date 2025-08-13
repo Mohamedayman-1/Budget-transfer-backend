@@ -84,6 +84,7 @@ class LoginView(APIView):
             
             return Response({
                 'data': RegisterSerializer(user).data,
+                'user_level': user.user_level.level_order if user.user_level else None,
                 'message': 'Login successful.',
                 'token': str(refresh.access_token),
                 'refresh': str(refresh),
