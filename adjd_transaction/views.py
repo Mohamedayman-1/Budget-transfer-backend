@@ -264,13 +264,9 @@ class AdjdTransactionTransferListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         transaction_id = request.query_params.get("transaction")
-
         print(f"Transaction ID: {transaction_id}")
-
         if not transaction_id:
-
             return Response(
                 {
                     "error": "transaction_id is required",
@@ -318,8 +314,8 @@ class AdjdTransactionTransferListView(APIView):
         response_data = []
 
         for transfer_data in serializer.data:
-
-            from_center = float(transfer_data.get("from_center", 0))
+            from_center_val = transfer_data.get("from_center", 0)
+            from_center = float(from_center_val) if from_center_val not in [None, ""] else 0.0
             to_center = float(transfer_data.get("to_center", 0))
             cost_center_code = transfer_data.get("cost_center_code")
             account_code = transfer_data.get("account_code")
@@ -368,8 +364,8 @@ class AdjdTransactionTransferListView(APIView):
         if all_related_transfers.exists():
             from_center_values = all_related_transfers.values_list("from_center", flat=True)
             to_center_values = all_related_transfers.values_list("to_center", flat=True)
-            total_from_center = sum(float(value) if value != '' else 0 for value in from_center_values)
-            total_to_center = sum(float(value) if value != '' else 0 for value in to_center_values)
+            total_from_center = sum(float(value) if value not in [None, ''] else 0 for value in from_center_values)
+            total_to_center = sum(float(value) if value not in [None, ''] else 0 for value in to_center_values)
 
 
 
