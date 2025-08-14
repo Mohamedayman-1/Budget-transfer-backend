@@ -67,6 +67,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        validated_data['username'] = validated_data['username'].lower()
         return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.Serializer):
@@ -74,6 +75,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
  
     def validate(self, data):
+        data['username'] = data['username'].lower()
         user = authenticate(**data)
         if user and user.is_active:
             return user
