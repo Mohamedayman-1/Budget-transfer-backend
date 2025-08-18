@@ -7,9 +7,9 @@ from datetime import timedelta, datetime, timezone as dt_timezone
 from django.utils import timezone
 
 from Admin_Panel import serializers
-from .models import xx_User, xx_UserLevel, xx_notification
+from .models import xx_User, xx_UserAbility, xx_UserLevel, xx_notification
 from .serializers import ChangePasswordSerializer, NotificationSerializer, RegisterSerializer, LoginSerializer, UserLevelSerializer
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsSuperAdmin
 from .utils import send_notification
 
 # Import all models from all apps
@@ -451,3 +451,99 @@ class Delete_Nnotification(APIView):
 
 
 
+class UserAbilitiesView(APIView):
+    """Manage user abilities"""
+    permission_classes = [IsSuperAdmin, IsAuthenticated]
+
+    def get(self, request):
+        # start with all abilities for current user
+        abilities = xx_UserAbility.objects.all()
+
+        # optional filters
+        user_id = request.query_params.get("user")
+        entity_id = request.query_params.get("entity")
+        ability_type = request.query_params.get("type")
+
+        if user_id:
+            abilities = abilities.filter(user_id=user_id)
+        if entity_id:
+            abilities = abilities.filter(Entity_id=entity_id)
+        if ability_type:
+            abilities = abilities.filter(Type=ability_type)
+
+        data = [
+            {
+                'id': ability.id,
+                'user': ability.user.username,
+                'entity': ability.Entity.entity if ability.Entity else None,
+                'type': ability.Type
+            }
+            for ability in abilities
+        ]
+        return Response(data)
+    
+    def post(self, request):
+        user_id = request.data.get('user')
+        entity_id = request.data.get('entity')
+        ability_type = request.data.get('type')
+
+        if not user_id or not entity_id or not ability_type:
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = xx_User.objects.get(id=user_id)
+            entity = XX_Entity.objects.get(id=entity_id)
+        except (xx_User.DoesNotExist, XX_Entity.DoesNotExist):
+            return Response({'error': 'User or Entity not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        ability, created = xx_UserAbility.objects.get_or_create(
+            user=user,
+            Entity=entity,
+            Type=ability_type
+        )
+        data = {
+            "id": ability.id,
+            "user": ability.user.username,
+            "entity": ability.Entity.entity if ability.Entity else None,
+            "type": ability.Type
+        }
+
+        if created:
+            return Response({'message': 'Ability created successfully', 'ability':data}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'message': 'Ability already exists', 'ability':data}, status=status.HTTP_200_OK)
+        
+    def put(self, request):
+        ability_id = request.data.get('id')
+        user_id = request.data.get('user')
+        entity_id = request.data.get('entity')
+        ability_type = request.data.get('type')
+
+        if not ability_id or not user_id or not entity_id or not ability_type:
+            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ability = xx_UserAbility.objects.get(id=ability_id)
+            user = xx_User.objects.get(id=user_id)
+            entity = XX_Entity.objects.get(id=entity_id)
+        except (xx_UserAbility.DoesNotExist, xx_User.DoesNotExist, XX_Entity.DoesNotExist):
+            return Response({'error': 'Ability, User or Entity not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        ability.user = user
+        ability.Entity = entity
+        ability.Type = ability_type
+        ability.save()
+
+        return Response({'message': 'Ability updated successfully'}, status=status.HTTP_200_OK)
+    
+    def delete(self, request):
+        ability_id = request.data.get('id')
+        if not ability_id:
+            return Response({'error': 'Missing ability ID'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ability = xx_UserAbility.objects.get(id=ability_id)
+            ability.delete()
+            return Response({'message': 'Ability deleted successfully'}, status=status.HTTP_200_OK)
+        except xx_UserAbility.DoesNotExist:
+            return Response({'error': 'Ability not found'}, status=status.HTTP_404_NOT_FOUND)

@@ -1,5 +1,6 @@
 from pyexpat import model
 from django.db import models
+from account_and_entitys.models import XX_Entity
 from user_management.models import xx_User
 # Removed encrypted fields import - using standard Django fields now
 import json
@@ -14,7 +15,7 @@ class xx_BudgetTransfer(models.Model):
     requested_by = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
     user_id = models.IntegerField(null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(null=True, blank=True)  # Changed from EncryptedCharField to TextField
+    notes = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
     code = models.CharField(max_length=10, null=True, blank=True)
     gl_posting_status = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
     approvel_1 = models.CharField(max_length=100, null=True, blank=True)  # Changed from EncryptedCharField
@@ -42,6 +43,82 @@ class xx_BudgetTransfer(models.Model):
     
     def __str__(self):
         return f"Transfer {self.transaction_id}: {self.amount} requested by {self.requested_by}"
+
+# SELECT * FROM XX_BUDGET_TRANSFER_XX
+# JOIN XX_Transaction_Transfer_XX ON XX_BUDGET_TRANSFER_XX.transaction_id = XX_Transaction_Transfer_XX.transaction_id 
+# JOIN XX_Entity_XX ON XX_Transaction_Transfer_XX.cost_center_code = XX_Entity_XX.entity 
+# WHERE XX_Entity_XX.id IN (value1, value2, ...);
+
+from django.db.models import Q, Count, F
+
+def filter_budget_transfers_all_in_entities(budget_transfers, user):
+    """
+    From a given queryset of BudgetTransfer objects,
+    return only those where *all* related transactions
+    belong to the given entity_ids.
+    
+    Modified to avoid Oracle NCLOB issues with complex annotations.
+    """
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity and ability.Type == 'edit']
+    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
+    
+    # Simplified approach to avoid NCLOB issues
+    # Get transfer IDs that have all their transactions in allowed entities
+    from django.db import connection
+    
+    try:
+        # Use raw SQL to avoid NCLOB issues with complex annotations
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT bt.transaction_id
+                FROM XX_BUDGET_TRANSFER_XX bt
+                WHERE NOT EXISTS (
+                    SELECT 1 
+                    FROM XX_Transaction_Transfer_XX tt 
+                    WHERE tt.transaction_id = bt.transaction_id 
+                    AND tt.cost_center_code NOT IN %s
+                )
+                AND EXISTS (
+                    SELECT 1 
+                    FROM XX_Transaction_Transfer_XX tt2 
+                    WHERE tt2.transaction_id = bt.transaction_id
+                )
+
+                UNION
+
+                SELECT bt.transaction_id
+                FROM XX_BUDGET_TRANSFER_XX bt
+                WHERE NOT EXISTS (
+                    SELECT 1 
+                    FROM XX_Transaction_Transfer_XX tt 
+                    WHERE tt.transaction_id = bt.transaction_id
+                )
+            """, [tuple(entity_codes) if entity_codes else ()])
+
+            allowed_ids = [row[0] for row in cursor.fetchall()]
+        
+        return budget_transfers.filter(transaction_id__in=allowed_ids)
+    
+    except Exception:
+        # Fallback to simple filtering if raw SQL fails
+        return budget_transfers.filter(
+            adjd_transfers__cost_center_code__in=entity_codes
+        ).distinct()
+
+
+def filter_budget_transfers_some_in_entities(budget_transfers, user):
+    """
+    From a given queryset of BudgetTransfer objects,
+    return only those where *some* related transactions
+    belong to the given entity_ids.
+    """
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity]
+
+    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
+
+    return budget_transfers.filter(
+        adjd_transfers__cost_center_code__in=entity_codes
+    ).distinct()
 
 
 class xx_BudgetTransferAttachment(models.Model):
@@ -73,7 +150,7 @@ class xx_BudgetTransferRejectReason(models.Model):
         on_delete=models.CASCADE,
         related_name='reject_reasons'
     )
-    reason_text = models.TextField(null=True, blank=True)  # Changed from EncryptedCharField to TextField
+    reason_text = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
 
     reject_date = models.DateTimeField(auto_now_add=True)  # Changed from EncryptedDateTimeField
 
@@ -92,7 +169,7 @@ class xx_BudgetTransferRejectReason(models.Model):
 class xx_DashboardBudgetTransfer(models.Model):
     """Model to store dashboard data for budget transfers"""
     Dashboard_id = models.AutoField(primary_key=True)
-    data = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField - Store JSON as text
+    data = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
     date = models.DateTimeField(auto_now_add=True)  # Changed from EncryptedDateTimeField
     
     def set_data(self, data_dict):

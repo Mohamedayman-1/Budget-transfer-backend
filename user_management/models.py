@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 # Removed encrypted fields import - using standard Django fields now
-
+from account_and_entitys.models import XX_Entity
 class xx_UserManager(BaseUserManager):
     def create_user(self, username, password=None, role='user', user_level=None):
         if not username:
@@ -62,7 +62,7 @@ class xx_UserLevel(models.Model):
 
 class xx_User(AbstractBaseUser, PermissionsMixin):
     """Custom user model with roles for admin and regular users"""
-    ROLE_CHOICES = (('admin', 'Admin'), ('user', 'User'))
+    ROLE_CHOICES = (('admin', 'Admin'), ('user', 'User'), ('superadmin', 'SuperAdmin'))
     username = models.CharField(max_length=255, unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     is_active = models.BooleanField(default=True)
@@ -89,6 +89,17 @@ class xx_User(AbstractBaseUser, PermissionsMixin):
         # If you have other Meta options, keep them here
 
 
+class xx_UserAbility(models.Model):
+    """Model to represent user abilities or permissions."""
+    user = models.ForeignKey(xx_User, on_delete=models.CASCADE, related_name='abilities')
+    Entity = models.ForeignKey(XX_Entity, on_delete=models.CASCADE, related_name='user_abilities', null=True, blank=True)
+    Type = models.CharField(max_length=50, null=True, blank=True, choices=[
+        ('edit', 'edit'),
+        ('approve', 'approve'),
+    ])
+    class Meta:
+        db_table = 'XX_USER_ABILITY_XX'
+        unique_together = ('user', 'Entity', 'Type')
 
 
 

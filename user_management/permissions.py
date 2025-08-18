@@ -3,7 +3,12 @@ from rest_framework.permissions import BasePermission
 class IsAdmin(BasePermission):
     """Permission check for admin users"""
     def has_permission(self, request, view):
-        return request.user.role == 'admin'
+        return request.user.role == 'admin' or request.user.role == 'superadmin'
+    
+class IsSuperAdmin(BasePermission):
+    """Permission check for admin users"""
+    def has_permission(self, request, view):
+        return request.user.role == 'superadmin'
  
 class IsRegularUser(BasePermission):
     """Permission check for regular users"""
