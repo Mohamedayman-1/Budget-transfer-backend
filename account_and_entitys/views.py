@@ -135,6 +135,10 @@ class EntityListView(APIView):
     
     def get(self, request):
         entities = XX_Entity.objects.all().order_by('entity')
+        if len(request.user.abilities) > 0:
+            # If user has abilities, filter entities based on their permissions
+            entity_ids = [ability.Entity.id for ability in request.user.abilities if ability.Entity]
+            entities = entities.filter(id__in=entity_ids).order_by('entity')
         
         serializer = EntitySerializer(entities, many=True)
         

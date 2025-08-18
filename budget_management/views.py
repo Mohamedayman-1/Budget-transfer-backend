@@ -11,6 +11,7 @@ from django.db.models.functions import Cast
 from django.db.models import CharField
 from user_management.models import xx_notification
 from .models import (
+    filter_budget_transfers_all_in_entities,
     xx_BudgetTransfer,
     xx_BudgetTransferAttachment,
     xx_BudgetTransferRejectReason,
@@ -154,8 +155,11 @@ class ListBudgetTransferView(APIView):
             transfers = xx_BudgetTransfer.objects.all()
         else:
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
+
+        if len(request.user.abilities) > 0:
+            transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
+        
         if code:
-            
             transfers = transfers.filter(code__icontains=code)
 
         transfers = transfers.order_by("-request_date")
@@ -185,7 +189,10 @@ class ListBudgetTransfer_approvels_View(APIView):
         transfers = xx_BudgetTransfer.objects.filter(
             status_level=status_level_val, code__startswith=code,status= "pending"
         )
-
+        
+        if len(request.user.abilities) > 0:
+            transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
+        
         if code:
             transfers = transfers.filter(code__icontains=code)
 

@@ -1,5 +1,6 @@
 from pyexpat import model
 from django.db import models
+from account_and_entitys.models import XX_Entity
 from user_management.models import xx_User
 # Removed encrypted fields import - using standard Django fields now
 import json
@@ -42,6 +43,50 @@ class xx_BudgetTransfer(models.Model):
     
     def __str__(self):
         return f"Transfer {self.transaction_id}: {self.amount} requested by {self.requested_by}"
+
+# SELECT * FROM XX_BUDGET_TRANSFER_XX
+# JOIN XX_Transaction_Transfer_XX ON XX_BUDGET_TRANSFER_XX.transaction_id = XX_Transaction_Transfer_XX.transaction_id 
+# JOIN XX_Entity_XX ON XX_Transaction_Transfer_XX.cost_center_code = XX_Entity_XX.entity 
+# WHERE XX_Entity_XX.id IN (value1, value2, ...);
+
+from django.db.models import Q, Count, F
+
+def filter_budget_transfers_all_in_entities(budget_transfers, user):
+    """
+    From a given queryset of BudgetTransfer objects,
+    return only those where *all* related transactions
+    belong to the given entity_ids.
+    """
+    entity_ids = [ability.Entity.id for ability in user.abilities if ability.Entity]
+    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
+
+    return (
+        budget_transfers
+        .annotate(
+            total_tx=Count("adjd_transfers", distinct=True),
+            matched_tx=Count(
+                "adjd_transfers",
+                filter=Q(adjd_transfers__cost_center_code__in=entity_codes),
+                distinct=True
+            )
+        )
+        .filter(total_tx=F("matched_tx"))
+    )
+
+
+def filter_budget_transfers_some_in_entities(budget_transfers, user):
+    """
+    From a given queryset of BudgetTransfer objects,
+    return only those where *some* related transactions
+    belong to the given entity_ids.
+    """
+    entity_ids = [ability.Entity.id for ability in user.abilities if ability.Entity]
+
+    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
+
+    return budget_transfers.filter(
+        adjd_transfers__cost_center_code__in=entity_codes
+    ).distinct()
 
 
 class xx_BudgetTransferAttachment(models.Model):

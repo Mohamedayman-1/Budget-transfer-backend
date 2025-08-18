@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import xx_TransactionTransfer
-from account_and_entitys.models import XX_PivotFund, XX_ACCOUNT_ENTITY_LIMIT
+from account_and_entitys.models import XX_Entity, XX_PivotFund, XX_ACCOUNT_ENTITY_LIMIT
 from budget_management.models import xx_BudgetTransfer
 from .serializers import AdjdTransactionTransferSerializer
 from decimal import Decimal
