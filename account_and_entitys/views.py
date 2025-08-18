@@ -17,6 +17,7 @@ from .models import XX_ACCOUNT_ENTITY_LIMIT
 from .serializers import AccountEntityLimitSerializer
 from django.db.models import CharField
 from django.db.models.functions import Cast
+from django.db.models import Q
 class EntityPagination(PageNumberPagination):
     """Pagination class for entities and accounts"""
     page_size = 10

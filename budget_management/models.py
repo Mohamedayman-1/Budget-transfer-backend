@@ -59,7 +59,7 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
     
     Modified to avoid Oracle NCLOB issues with complex annotations.
     """
-    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity]
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity and ability.Type == 'edit']
     entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
     
     # Simplified approach to avoid NCLOB issues
@@ -83,8 +83,18 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
                     FROM XX_Transaction_Transfer_XX tt2 
                     WHERE tt2.transaction_id = bt.transaction_id
                 )
+
+                UNION
+
+                SELECT bt.transaction_id
+                FROM XX_BUDGET_TRANSFER_XX bt
+                WHERE NOT EXISTS (
+                    SELECT 1 
+                    FROM XX_Transaction_Transfer_XX tt 
+                    WHERE tt.transaction_id = bt.transaction_id
+                )
             """, [tuple(entity_codes) if entity_codes else ()])
-            
+
             allowed_ids = [row[0] for row in cursor.fetchall()]
         
         return budget_transfers.filter(transaction_id__in=allowed_ids)
