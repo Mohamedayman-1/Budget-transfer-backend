@@ -25,18 +25,26 @@ class EntityPagination(PageNumberPagination):
 
 # Account views
 class AccountListView(APIView):
-    """List all accounts"""
+    """List all accounts with optional search"""
     permission_classes = [IsAuthenticated]
     pagination_class = EntityPagination
-    
+
     def get(self, request):
-        accounts = XX_Account.objects.all().order_by('account')
+        search_query = request.query_params.get("search", None)
+
+        accounts = XX_Account.objects.all().order_by("account")
+
+        if search_query:
+            # Cast account (int) to string for filtering
+            accounts = accounts.filter(
+                Q(account__icontains=search_query)  # works because Django auto casts to text in SQL
+            )
+
         serializer = AccountSerializer(accounts, many=True)
-        
-        # Return all data directly without pagination
+
         return Response({
-            'message': 'Accounts retrieved successfully.',
-            'data': serializer.data
+            "message": "Accounts retrieved successfully.",
+            "data": serializer.data
         })
 
 class AccountCreateView(APIView):
@@ -135,13 +143,18 @@ class EntityListView(APIView):
     
     def get(self, request):
         entities = XX_Entity.objects.all().order_by('entity')
-        if len(request.user.abilities) > 0:
-            # If user has abilities, filter entities based on their permissions
-            entity_ids = [ability.Entity.id for ability in request.user.abilities if ability.Entity]
+
+        # 🔹 Apply permissions filter
+        if request.user.abilities.count() > 0:
+            entity_ids = [ability.Entity.id for ability in request.user.abilities.all() if ability.Entity]
             entities = entities.filter(id__in=entity_ids).order_by('entity')
-        
+
+        # 🔹 Apply search filter (treat entity as string)
+        search_query = request.query_params.get("search")
+        if search_query:
+            entities = entities.filter(entity__icontains=str(search_query))
+
         serializer = EntitySerializer(entities, many=True)
-        
         return Response({
             'message': 'Accounts retrieved successfully.',
             'data': serializer.data

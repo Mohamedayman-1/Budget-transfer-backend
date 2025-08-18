@@ -57,7 +57,7 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
     return only those where *all* related transactions
     belong to the given entity_ids.
     """
-    entity_ids = [ability.Entity.id for ability in user.abilities if ability.Entity]
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity]
     entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
 
     return (
@@ -80,7 +80,7 @@ def filter_budget_transfers_some_in_entities(budget_transfers, user):
     return only those where *some* related transactions
     belong to the given entity_ids.
     """
-    entity_ids = [ability.Entity.id for ability in user.abilities if ability.Entity]
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity]
 
     entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
 

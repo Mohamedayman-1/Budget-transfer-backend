@@ -156,7 +156,7 @@ class ListBudgetTransferView(APIView):
         else:
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
 
-        if len(request.user.abilities) > 0:
+        if request.user.abilities.count() > 0:
             transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
         
         if code:
@@ -190,7 +190,7 @@ class ListBudgetTransfer_approvels_View(APIView):
             status_level=status_level_val, code__startswith=code,status= "pending"
         )
         
-        if len(request.user.abilities) > 0:
+        if request.user.abilities.count() > 0:
             transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
         
         if code:
