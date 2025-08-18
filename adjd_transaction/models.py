@@ -6,7 +6,7 @@ class xx_TransactionTransfer(models.Model):
     """Model for ADJD transaction transfers"""
     transfer_id = models.AutoField(primary_key=True)
     cost_center_code = models.IntegerField(null=True, blank=True)
-    account_name = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
+    account_name = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
     approved_budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
     available_budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
     from_center = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from TextField to DecimalField
@@ -19,9 +19,9 @@ class xx_TransactionTransfer(models.Model):
         blank=True,
         related_name='adjd_transfers'
     )
-    reason = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
+    reason = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
     account_code = models.IntegerField(null=True, blank=True)
-    cost_center_name = models.TextField(null=True, blank=True)  # Changed from EncryptedTextField
+    cost_center_name = models.TextField(null=True, blank=True)  # Keep as TextField but avoid in complex queries
     done = models.IntegerField(default=1)
     encumbrance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
     actual = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedTextField to DecimalField
