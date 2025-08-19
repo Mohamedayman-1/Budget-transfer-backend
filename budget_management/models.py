@@ -98,14 +98,15 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
             allowed_ids = [row[0] for row in cursor.fetchall()]
         
         combined = budget_transfers.filter(
-            Q(transaction_id__in=allowed_ids) | Q(created_by=user)
+            Q(transaction_id__in=allowed_ids) | Q(user_id=user.id)
         ).distinct()
         return combined
 
-    except Exception:
+    except Exception as e:
         # Fallback to simple filtering if raw SQL fails
+        print(f"Error occurred: {e}")
         return budget_transfers.filter(
-            adjd_transfers__cost_center_code__in=entity_codes
+            Q(adjd_transfers__cost_center_code__in=entity_codes) | Q(user_id=user.id)
         ).distinct()
 
 

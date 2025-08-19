@@ -164,7 +164,7 @@ class ListBudgetTransferView(APIView):
         
         if request.user.abilities.count() > 0:
             transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
-            
+        
         print(transfers.count())
 
         if code:
