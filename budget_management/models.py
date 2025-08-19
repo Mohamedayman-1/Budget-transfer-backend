@@ -97,8 +97,11 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
 
             allowed_ids = [row[0] for row in cursor.fetchall()]
         
-        return budget_transfers.filter(transaction_id__in=allowed_ids)
-    
+        combined = budget_transfers.filter(
+            Q(transaction_id__in=allowed_ids) | Q(created_by=user)
+        ).distinct()
+        return combined
+
     except Exception:
         # Fallback to simple filtering if raw SQL fails
         return budget_transfers.filter(

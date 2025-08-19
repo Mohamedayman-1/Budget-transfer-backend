@@ -156,12 +156,17 @@ class ListBudgetTransferView(APIView):
             transfers = xx_BudgetTransfer.objects.all()
         else:
             transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
+
+       
         print(transfers.count())
         # Skip complex entity filtering for now to avoid NCLOB issues
         # TODO: Implement entity filtering without complex annotations
+        
         if request.user.abilities.count() > 0:
             transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
+            
         print(transfers.count())
+
         if code:
             transfers = transfers.filter(code__icontains=code)
         print(transfers.count())
