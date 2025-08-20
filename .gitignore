@@ -81,3 +81,5 @@ tmp/
 _build/
 docs/_build/
 logs/budget_signals.log
+
+*.xlsx
