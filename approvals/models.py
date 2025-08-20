@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
 
 """Dynamic approval workflow models.
 
@@ -14,7 +16,6 @@ Phase 1: Models only (engine / services to be added separately).
 # Import user + related references lazily to avoid circular imports in migrations
 from user_management.models import xx_User, xx_UserLevel  # noqa
 from budget_management.models import xx_BudgetTransfer  # noqa
-
 
 class ApprovalWorkflowTemplate(models.Model):
 	"""Defines a reusable workflow template for a given transfer type.
@@ -48,8 +49,6 @@ class ApprovalWorkflowTemplate(models.Model):
 
 	def __str__(self):
 		return f"WorkflowTemplate {self.code} v{self.version} ({'active' if self.is_active else 'inactive'})"
-
-
 
 class ApprovalWorkflowStageTemplate(models.Model):
 	"""Stage template belonging to a workflow template."""
@@ -107,7 +106,6 @@ class ApprovalWorkflowStageTemplate(models.Model):
 	def __str__(self):
 		return f"StageTemplate {self.workflow_template.code}#{self.order_index} {self.name}"
 
-  
 class ApprovalWorkflowInstance(models.Model):
 	"""Runtime instance of a workflow for a specific budget transfer."""
 
@@ -154,7 +152,6 @@ class ApprovalWorkflowInstance(models.Model):
 	def __str__(self):
 		return f"WorkflowInstance for Transfer {self.budget_transfer_id} ({self.status})"
 
-
 class ApprovalWorkflowStageInstance(models.Model):
 	"""Concrete runtime stage tied to its template and parent instance."""
 
@@ -199,7 +196,6 @@ class ApprovalWorkflowStageInstance(models.Model):
 	def is_terminal(self):
 		return self.status in {self.STATUS_COMPLETED, self.STATUS_SKIPPED, self.STATUS_CANCELLED}
 
-
 class ApprovalAssignment(models.Model):
     """Materialized eligible approvers for a given stage instance."""
     STATUS_PENDING = "pending"
@@ -239,7 +235,6 @@ class ApprovalAssignment(models.Model):
     def __str__(self):
         return f"Assignment {self.user_id} -> StageInstance {self.stage_instance_id}"
 
-
 class ApprovalAction(models.Model):
     """Audit log of user actions within a stage instance."""
 
@@ -274,7 +269,6 @@ class ApprovalAction(models.Model):
     def __str__(self):
         return f"Action {self.action} by {self.user_id} on StageInstance {self.stage_instance_id}"
 
-
 class ApprovalDelegation(models.Model):
 	"""Optional delegation record (future extension)."""
 
@@ -307,11 +301,6 @@ class ApprovalDelegation(models.Model):
 			self.save(update_fields=["active", "deactivated_at"])
 
 
-
-
-
-from django.db import transaction
-from django.utils import timezone
 
 def activate_next_stage(budget_transfer):
     """
