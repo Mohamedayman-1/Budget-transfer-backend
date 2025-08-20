@@ -531,7 +531,7 @@ def process_user_action(budget_transfer, user, action, comment=None):
     if not assignment:
         raise ValueError(f"User {user} has no assignment in this stage")
     if action not in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT,
-                      ApprovalAction.ACTION_DELEGATE, ApprovalAction.ACTION_COMMENT]:
+                      ApprovalAction.ACTION_DELEGATE]:
         raise ValueError(f"Invalid action: {action}")
     if not active_stage.stage_template.allow_reject and action == ApprovalAction.ACTION_REJECT:
         raise ValueError("Rejection not allowed in this stage")
@@ -558,7 +558,7 @@ def process_user_action(budget_transfer, user, action, comment=None):
     
     # Update assignment status for approve/reject actions
     if action in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT]:
-        assignment.status = action + "d"  # approved/rejected
+        assignment.status = action  # approved/rejected
         assignment.save(update_fields=["status"])
     
     # 2) Handle delegation separately
@@ -582,7 +582,6 @@ def process_user_action(budget_transfer, user, action, comment=None):
             instance.save(update_fields=["status", "finished_at"])
 
     return instance
-
 
 def create_workflow_instance(budget_transfer, transfer_type=None):
     """
@@ -628,7 +627,6 @@ def create_workflow_instance(budget_transfer, transfer_type=None):
     
     return workflow_instance
 
-
 def start_approval_workflow(budget_transfer, transfer_type=None):
     """
     Complete workflow initialization: creates instance and activates first stage.
@@ -650,7 +648,6 @@ def start_approval_workflow(budget_transfer, transfer_type=None):
         activate_next_stage(budget_transfer)
     
     return workflow_instance
-
 
 def cancel_workflow(budget_transfer, reason=None):
     """
@@ -703,7 +700,6 @@ def cancel_workflow(budget_transfer, reason=None):
     
     return workflow_instance
 
-
 def get_user_pending_approvals(user):
     """
     Get all pending approval assignments for a specific user.
@@ -723,7 +719,6 @@ def get_user_pending_approvals(user):
         'stage_instance__workflow_instance__budget_transfer',
         'stage_instance__stage_template'
     )
-
 
 def delegate_approval(from_user, to_user, stage_instance, comment=None):
     """
