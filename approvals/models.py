@@ -201,78 +201,78 @@ class ApprovalWorkflowStageInstance(models.Model):
 
 
 class ApprovalAssignment(models.Model):
-	"""Materialized eligible approvers for a given stage instance."""
-	STATUS_PENDING = "pending"
-	STATUS_APPROVED = "approved"
-	STATUS_REJECTED = "rejected"
-	STATUS_DELEGATED = "delegated"
-	STATUS_CHOICES = [
-		(STATUS_PENDING, "Pending"),
-		(STATUS_APPROVED, "Approved"),
-		(STATUS_REJECTED, "Rejected"),
-		(STATUS_DELEGATED, "Delegated"),
-	]
-	stage_instance = models.ForeignKey(
-		ApprovalWorkflowStageInstance, related_name="assignments", on_delete=models.CASCADE
-	)
-	user = models.ForeignKey(
-		xx_User, related_name="approval_assignments", on_delete=models.CASCADE
-	)
-	role_snapshot = models.CharField(max_length=50, null=True, blank=True)
-	level_snapshot = models.CharField(max_length=50, null=True, blank=True)
-	is_mandatory = models.BooleanField(default=True)
- 	status = models.CharField(
+    """Materialized eligible approvers for a given stage instance."""
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_DELEGATED = "delegated"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+        (STATUS_DELEGATED, "Delegated"),
+    ]
+    stage_instance = models.ForeignKey(
+        ApprovalWorkflowStageInstance, related_name="assignments", on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        xx_User, related_name="approval_assignments", on_delete=models.CASCADE
+    )
+    role_snapshot = models.CharField(max_length=50, null=True, blank=True)
+    level_snapshot = models.CharField(max_length=50, null=True, blank=True)
+    is_mandatory = models.BooleanField(default=True)
+    status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="pending"
     )
 
-	created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-	class Meta:
-		db_table = "APPROVAL_ASSIGNMENT"
-		unique_together = ("stage_instance", "user")
-		indexes = [
-			models.Index(fields=["user"]),
-		]
+    class Meta:
+        db_table = "APPROVAL_ASSIGNMENT"
+        unique_together = ("stage_instance", "user")
+        indexes = [
+            models.Index(fields=["user"]),
+        ]
 
-	def __str__(self):
-		return f"Assignment {self.user_id} -> StageInstance {self.stage_instance_id}"
+    def __str__(self):
+        return f"Assignment {self.user_id} -> StageInstance {self.stage_instance_id}"
 
 
 class ApprovalAction(models.Model):
-	"""Audit log of user actions within a stage instance."""
+    """Audit log of user actions within a stage instance."""
 
-	ACTION_APPROVE = "approve"
-	ACTION_REJECT = "reject"
-	ACTION_DELEGATE = "delegate"
-	ACTION_COMMENT = "comment"
-	ACTION_CHOICES = [
-		(ACTION_APPROVE, "Approve"),
-		(ACTION_REJECT, "Reject"),
-		(ACTION_DELEGATE, "Delegate"),
-		(ACTION_COMMENT, "Comment"),
-	]
+    ACTION_APPROVE = "approve"
+    ACTION_REJECT = "reject"
+    ACTION_DELEGATE = "delegate"
+    ACTION_COMMENT = "comment"
+    ACTION_CHOICES = [
+        (ACTION_APPROVE, "Approve"),
+        (ACTION_REJECT, "Reject"),
+        (ACTION_DELEGATE, "Delegate"),
+        (ACTION_COMMENT, "Comment"),
+    ]
 
-	stage_instance = models.ForeignKey(
-		ApprovalWorkflowStageInstance, related_name="actions", on_delete=models.CASCADE
-	)
-	user = models.ForeignKey(xx_User, related_name="approval_actions", on_delete=models.CASCADE)
-	assignment = models.OneToOneField(ApprovalAssignment, null=True, blank=True, on_delete=models.SET_NULL, related_name="action")
- 	action = models.CharField(max_length=10, choices=ACTION_CHOICES)
-	comment = models.TextField(null=True, blank=True)
-	created_at = models.DateTimeField(auto_now_add=True)
-	triggers_stage_completion = models.BooleanField(default=False)
+    stage_instance = models.ForeignKey(
+        ApprovalWorkflowStageInstance, related_name="actions", on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(xx_User, related_name="approval_actions", on_delete=models.CASCADE)
+    assignment = models.OneToOneField(ApprovalAssignment, null=True, blank=True, on_delete=models.SET_NULL, related_name="action")
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    triggers_stage_completion = models.BooleanField(default=False)
 
-	class Meta:
-		db_table = "APPROVAL_ACTION"
-		ordering = ["created_at"]
-		indexes = [
-			models.Index(fields=["stage_instance", "action"]),
-		]
+    class Meta:
+        db_table = "APPROVAL_ACTION"
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["stage_instance", "action"]),
+        ]
 
-	def __str__(self):
-		return f"Action {self.action} by {self.user_id} on StageInstance {self.stage_instance_id}"
+    def __str__(self):
+        return f"Action {self.action} by {self.user_id} on StageInstance {self.stage_instance_id}"
 
 
 class ApprovalDelegation(models.Model):
@@ -305,6 +305,8 @@ class ApprovalDelegation(models.Model):
 			self.active = False
 			self.deactivated_at = timezone.now()
 			self.save(update_fields=["active", "deactivated_at"])
+
+
 
 
 
@@ -478,26 +480,26 @@ def check_finished_stage(budget_transfer):
 
         assignments = stage.assignments.all()
         approved_assignments = stage.actions.filter(
-			action=ApprovalAction.ACTION_APPROVE
-		).values_list("assignment_id", flat=True).distinct()
+            action=ApprovalAction.ACTION_APPROVE
+        ).values_list("assignment_id", flat=True).distinct()
+        approved_count = len(approved_assignments)
 
         if stage.stage_template.decision_policy == ApprovalWorkflowStageTemplate.POLICY_ALL:
             if set(approved_assignments) != set(stage.assignments.values_list("id", flat=True)):
                 all_approved = False
 
-
         elif stage.stage_template.decision_policy == ApprovalWorkflowStageTemplate.POLICY_ANY:
-            if approved_assignments == 0:
+            if approved_count == 0:
                 all_approved = False
 
         elif stage.stage_template.decision_policy == ApprovalWorkflowStageTemplate.POLICY_QUORUM:
             quorum = stage.stage_template.quorum_count or max(1, assignments.count() // 2 + 1)
-            if approved_assignments < quorum:
+            if approved_count < quorum:
                 all_approved = False
 
         else:
             # Default safeguard: require at least one approval
-            if approved_assignments == 0:
+            if approved_count == 0:
                 all_approved = False
 
     # Decision logic for group
@@ -524,19 +526,28 @@ def process_user_action(budget_transfer, user, action, comment=None):
     ).first()
     if not active_stage:
         raise ValueError("No active stage to act on")
-	
- 	assignment = active_stage.assignments.filter(user=user).first()
-	if not assignment:
-		raise ValueError(f"User {user} has no assignment in this stage")
-	if action not in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT,
-					  ApprovalAction.ACTION_DELEGATE]:
-		raise ValueError(f"Invalid action: {action}")
-	if not active_stage.template.allow_reject and action == ApprovalAction.ACTION_REJECT:
-		raise ValueError("Rejection not allowed in this stage")
-	if not active_stage.template.allow_delegate and action == ApprovalAction.ACTION_DELEGATE:
-		raise ValueError("Delegation not allowed in this stage")
     
-    approvalAction.objects.create(
+    assignment = active_stage.assignments.filter(user=user).first()
+    if not assignment:
+        raise ValueError(f"User {user} has no assignment in this stage")
+    if action not in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT,
+                      ApprovalAction.ACTION_DELEGATE, ApprovalAction.ACTION_COMMENT]:
+        raise ValueError(f"Invalid action: {action}")
+    if not active_stage.stage_template.allow_reject and action == ApprovalAction.ACTION_REJECT:
+        raise ValueError("Rejection not allowed in this stage")
+    if not active_stage.stage_template.allow_delegate and action == ApprovalAction.ACTION_DELEGATE:
+        raise ValueError("Delegation not allowed in this stage")
+    
+    # Check if user already took action (prevent duplicate actions)
+    existing_action = ApprovalAction.objects.filter(
+        stage_instance=active_stage,
+        user=user,
+        action__in=[ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT]
+    ).first()
+    if existing_action and action in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT]:
+        raise ValueError(f"User {user} already took action: {existing_action.action}")
+    
+    ApprovalAction.objects.create(
         stage_instance=active_stage,
         user=user,
         assignment=assignment,
@@ -544,12 +555,18 @@ def process_user_action(budget_transfer, user, action, comment=None):
         comment=comment,
         triggers_stage_completion=False,  # actual completion decided below
     )
-	assignment.status = action
-    assignment.save(update_fields=["status"])
     
-    # 2) Handle delegation separately (optional)
+    # Update assignment status for approve/reject actions
+    if action in [ApprovalAction.ACTION_APPROVE, ApprovalAction.ACTION_REJECT]:
+        assignment.status = action + "d"  # approved/rejected
+        assignment.save(update_fields=["status"])
+    
+    # 2) Handle delegation separately
     if action == ApprovalAction.ACTION_DELEGATE:
-        # handle delegation logic if needed
+        # Note: This is a simplified delegation. For full delegation, use delegate_approval() function
+        # which requires a target user parameter
+        assignment.status = ApprovalAssignment.STATUS_DELEGATED
+        assignment.save(update_fields=["status"])
         return instance
 
     # 3) Ask stage-level logic if it’s finished
@@ -565,3 +582,216 @@ def process_user_action(budget_transfer, user, action, comment=None):
             instance.save(update_fields=["status", "finished_at"])
 
     return instance
+
+
+def create_workflow_instance(budget_transfer, transfer_type=None):
+    """
+    Creates a new ApprovalWorkflowInstance for a budget transfer.
+    Automatically selects the appropriate workflow template based on transfer type.
+    
+    Args:
+        budget_transfer: The xx_BudgetTransfer instance
+        transfer_type: Optional override for transfer type selection
+    
+    Returns:
+        ApprovalWorkflowInstance: The created workflow instance
+    """
+    # Determine transfer type
+    if not transfer_type:
+        # Try to determine from budget_transfer attributes
+        transfer_type = getattr(budget_transfer, 'transfer_type', 'GEN')
+        if not transfer_type:
+            transfer_type = 'GEN'  # Default to Generic
+    
+    # Find active template for this transfer type
+    template = ApprovalWorkflowTemplate.objects.filter(
+        transfer_type=transfer_type,
+        is_active=True
+    ).order_by('-version').first()
+    
+    if not template:
+        # Fallback to generic template
+        template = ApprovalWorkflowTemplate.objects.filter(
+            transfer_type='GEN',
+            is_active=True
+        ).order_by('-version').first()
+    
+    if not template:
+        raise ValueError(f"No active workflow template found for transfer type: {transfer_type}")
+    
+    # Create workflow instance
+    workflow_instance = ApprovalWorkflowInstance.objects.create(
+        budget_transfer=budget_transfer,
+        template=template,
+        status=ApprovalWorkflowInstance.STATUS_PENDING
+    )
+    
+    return workflow_instance
+
+
+def start_approval_workflow(budget_transfer, transfer_type=None):
+    """
+    Complete workflow initialization: creates instance and activates first stage.
+    
+    Args:
+        budget_transfer: The xx_BudgetTransfer instance
+        transfer_type: Optional transfer type override
+    
+    Returns:
+        ApprovalWorkflowInstance: The initialized workflow instance
+    """
+    # Create workflow instance if it doesn't exist
+    workflow_instance = getattr(budget_transfer, 'workflow_instance', None)
+    if not workflow_instance:
+        workflow_instance = create_workflow_instance(budget_transfer, transfer_type)
+    
+    # Activate first stage
+    if workflow_instance.status == ApprovalWorkflowInstance.STATUS_PENDING:
+        activate_next_stage(budget_transfer)
+    
+    return workflow_instance
+
+
+def cancel_workflow(budget_transfer, reason=None):
+    """
+    Cancels an active workflow and all its stages.
+    
+    Args:
+        budget_transfer: The xx_BudgetTransfer instance
+        reason: Optional cancellation reason
+    
+    Returns:
+        ApprovalWorkflowInstance: The cancelled workflow instance
+    """
+    workflow_instance = getattr(budget_transfer, 'workflow_instance', None)
+    if not workflow_instance:
+        raise ValueError("No workflow instance found to cancel")
+    
+    # Prevent cancelling already finished workflows
+    if workflow_instance.status in [
+        ApprovalWorkflowInstance.STATUS_APPROVED,
+        ApprovalWorkflowInstance.STATUS_REJECTED,
+        ApprovalWorkflowInstance.STATUS_CANCELLED,
+    ]:
+        return workflow_instance
+    
+    with transaction.atomic():
+        # Cancel all active stage instances
+        active_stages = workflow_instance.stage_instances.filter(
+            status=ApprovalWorkflowStageInstance.STATUS_ACTIVE
+        )
+        for stage in active_stages:
+            stage.status = ApprovalWorkflowStageInstance.STATUS_CANCELLED
+            stage.completed_at = timezone.now()
+            stage.save(update_fields=["status", "completed_at"])
+        
+        # Cancel workflow instance
+        workflow_instance.status = ApprovalWorkflowInstance.STATUS_CANCELLED
+        workflow_instance.finished_at = timezone.now()
+        workflow_instance.current_stage_template = None
+        workflow_instance.save(update_fields=["status", "finished_at", "current_stage_template"])
+        
+        # Log cancellation action
+        if active_stages.exists():
+            ApprovalAction.objects.create(
+                stage_instance=active_stages.first(),
+                user=None,  # System action
+                action=ApprovalAction.ACTION_COMMENT,
+                comment=f"Workflow cancelled. Reason: {reason or 'No reason provided'}",
+                triggers_stage_completion=False,
+            )
+    
+    return workflow_instance
+
+
+def get_user_pending_approvals(user):
+    """
+    Get all pending approval assignments for a specific user.
+    
+    Args:
+        user: The xx_User instance
+    
+    Returns:
+        QuerySet: ApprovalAssignment objects that are pending for this user
+    """
+    return ApprovalAssignment.objects.filter(
+        user=user,
+        status=ApprovalAssignment.STATUS_PENDING,
+        stage_instance__status=ApprovalWorkflowStageInstance.STATUS_ACTIVE,
+        stage_instance__workflow_instance__status=ApprovalWorkflowInstance.STATUS_IN_PROGRESS
+    ).select_related(
+        'stage_instance__workflow_instance__budget_transfer',
+        'stage_instance__stage_template'
+    )
+
+
+def delegate_approval(from_user, to_user, stage_instance, comment=None):
+    """
+    Delegates an approval from one user to another.
+    
+    Args:
+        from_user: The user delegating their approval
+        to_user: The user receiving the delegation
+        stage_instance: The ApprovalWorkflowStageInstance
+        comment: Optional delegation comment
+    
+    Returns:
+        ApprovalDelegation: The created delegation record
+    """
+    # Validate delegation is allowed
+    if not stage_instance.stage_template.allow_delegate:
+        raise ValueError("Delegation not allowed in this stage")
+    
+    # Check from_user has assignment
+    from_assignment = stage_instance.assignments.filter(user=from_user).first()
+    if not from_assignment:
+        raise ValueError(f"User {from_user} has no assignment in this stage")
+    
+    if from_assignment.status != ApprovalAssignment.STATUS_PENDING:
+        raise ValueError(f"Assignment already processed: {from_assignment.status}")
+    
+    # Check if to_user already has assignment or delegation
+    existing_assignment = stage_instance.assignments.filter(user=to_user).first()
+    existing_delegation = ApprovalDelegation.objects.filter(
+        to_user=to_user,
+        stage_instance=stage_instance,
+        active=True
+    ).first()
+    
+    if existing_assignment or existing_delegation:
+        raise ValueError(f"User {to_user} already involved in this stage")
+    
+    with transaction.atomic():
+        # Create delegation record
+        delegation = ApprovalDelegation.objects.create(
+            from_user=from_user,
+            to_user=to_user,
+            stage_instance=stage_instance,
+            active=True
+        )
+        
+        # Create assignment for delegate
+        ApprovalAssignment.objects.create(
+            stage_instance=stage_instance,
+            user=to_user,
+            role_snapshot=to_user.role,
+            level_snapshot=getattr(to_user.level, "name", None),
+            is_mandatory=from_assignment.is_mandatory,
+            status=ApprovalAssignment.STATUS_PENDING
+        )
+        
+        # Update original assignment
+        from_assignment.status = ApprovalAssignment.STATUS_DELEGATED
+        from_assignment.save(update_fields=["status"])
+        
+        # Log delegation action
+        ApprovalAction.objects.create(
+            stage_instance=stage_instance,
+            user=from_user,
+            assignment=from_assignment,
+            action=ApprovalAction.ACTION_DELEGATE,
+            comment=comment or f"Delegated to {to_user}",
+            triggers_stage_completion=False,
+        )
+    
+    return delegation
