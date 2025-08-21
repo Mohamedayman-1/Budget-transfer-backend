@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+
+from budget_management.models import get_entities_with_children
 from .models import XX_Account, XX_Entity, XX_PivotFund, XX_TransactionAudit, XX_ACCOUNT_ENTITY_LIMIT
 from .serializers import AccountSerializer, EntitySerializer, PivotFundSerializer, TransactionAuditSerializer, AccountEntityLimitSerializer
 from rest_framework.views import APIView
@@ -148,12 +150,12 @@ class EntityListView(APIView):
         # 🔹 Apply permissions filter
         if request.user.abilities.count() > 0:
             entity_ids = [ability.Entity.id for ability in request.user.abilities.all() if ability.Entity]
-            entities = entities.filter(id__in=entity_ids).order_by('entity')
-
+            # get_entities_with_children already returns XX_Entity objects
+            entities = get_entities_with_children(entity_ids)
         # 🔹 Apply search filter (treat entity as string)
         search_query = request.query_params.get("search")
         if search_query:
-            entities = entities.filter(entity__icontains=str(search_query))
+            entities = [e for e in entities if search_query.lower() in str(e.entity).lower()]
 
         serializer = EntitySerializer(entities, many=True)
         return Response({
