@@ -301,7 +301,6 @@ class ApprovalDelegation(models.Model):
 			self.save(update_fields=["active", "deactivated_at"])
 
 
-
 def activate_next_stage(budget_transfer):
     """
     Progresses the workflow instance for the given budget_transfer
