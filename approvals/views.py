@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.utils import timezone
 
 # DRF imports
@@ -75,12 +75,38 @@ def activate_next_stage(budget_transfer):
 
     with transaction.atomic():
         # Get current active stage (if any)
-        active_stage = (
+
+        # try:
+        #     workflow_instance = (
+        #         ApprovalWorkflowInstance.objects
+        #         .select_for_update(nowait=True)
+        #         .get(pk=workflow_instance.pk)
+        #     )
+        # except DatabaseError:
+        #     raise ValueError("Workflow is being processed by another session. Try again later.")
+
+        # Oracle limitation: FOR UPDATE cannot be used with LIMIT/OFFSET (which .first() adds).
+        # Do a two-step: fetch the id without lock, then lock that single row.
+        stage_id = (
             workflow_instance.stage_instances
             .filter(status=ApprovalWorkflowStageInstance.STATUS_ACTIVE)
-            .select_for_update(nowait=True)
+            .order_by("id")
+            .values_list("pk", flat=True)
             .first()
         )
+
+        if stage_id is not None:
+            try:
+                active_stage = (
+                    ApprovalWorkflowStageInstance.objects
+                    .select_for_update(nowait=True)
+                    .get(pk=stage_id)
+                )
+            except DatabaseError:
+                raise ValueError("Active stage is locked by another session. Try again later.")
+        else:
+            active_stage = None
+
 
         if not active_stage:
             # No active stage yet -> create first one
@@ -154,7 +180,7 @@ def _create_assignments(stage_instance):
 
     qs = xx_User.objects.all()
     if required_level:
-        qs = qs.filter(level=required_level)
+        qs = qs.filter(user_level_id=required_level.id)
     if required_role:
         qs = qs.filter(role=required_role)
 
@@ -164,7 +190,7 @@ def _create_assignments(stage_instance):
             user=user,
             defaults={
                 "role_snapshot": user.role,
-                "level_snapshot": getattr(user.level, "name", None),
+                "level_snapshot": getattr(user.level.name, "name", None),
                 "is_mandatory": True,
             },
         )
@@ -182,25 +208,34 @@ def check_finished_stage(budget_transfer):
     if not workflow_instance:
         raise ValueError(f"No workflow instance found for transfer {budget_transfer.id}")
 
-    # Lock current active stage(s)
-    active_stages = (
-        workflow_instance.stage_instances
-        .filter(status=ApprovalWorkflowStageInstance.STATUS_ACTIVE)
-        .select_for_update()
+    # Determine group without locking rows with LIMIT/OFFSET
+    base_qs = workflow_instance.stage_instances.filter(
+        status=ApprovalWorkflowStageInstance.STATUS_ACTIVE
     )
 
-    if not active_stages.exists():
+    if not base_qs.exists():
         return False, "pending"
 
-    # If multiple stages share a parallel_group, treat them as a group
-    parallel_group = active_stages.first().stage_template.parallel_group
+    parallel_group = (
+        base_qs.order_by("id")
+        .values_list("stage_template__parallel_group", flat=True)
+        .first()
+    )
+
     if parallel_group:
-        group_stages = workflow_instance.stage_instances.filter(
+        group_qs = workflow_instance.stage_instances.filter(
             status=ApprovalWorkflowStageInstance.STATUS_ACTIVE,
             stage_template__parallel_group=parallel_group,
         )
     else:
-        group_stages = active_stages
+        group_qs = base_qs
+
+    # Lock the relevant group rows without using .first() on the locked queryset
+    try:
+        group_stages = group_qs.select_for_update(nowait=True)
+    except DatabaseError:
+        # Another session is processing these rows
+        return False, "pending"
 
     # Evaluate each stage in the group
     all_approved = True
