@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+
+from approvals.views import start_approval_workflow
 from .models import xx_TransactionTransfer
 from account_and_entitys.models import XX_Entity, XX_PivotFund, XX_ACCOUNT_ENTITY_LIMIT
 from budget_management.models import xx_BudgetTransfer
@@ -581,10 +583,12 @@ class AdjdtranscationtransferSubmit(APIView):
 
                 # Update the budget transfer status
                 budget_transfer = xx_BudgetTransfer.objects.get(pk=transaction_id)
-                budget_transfer.status_level = 2
-                budget_transfer.approvel_1 = request.user.username
-                budget_transfer.approvel_1_date = timezone.now()
-                budget_transfer.save()
+                transfer_type = budget_transfer.type  # Set the transfer type
+                # budget_transfer.status_level = 2
+                # budget_transfer.approvel_1 = request.user.username
+                # budget_transfer.approvel_1_date = timezone.now()
+                # budget_transfer.save()
+                workflow_instance = start_approval_workflow(budget_transfer, transfer_type)
 
                 # user_submit=xx_notification()
                 # user_submit.create_notification(user=request.user,message=f"you have submited the trasnation {transaction_id} secessfully ")

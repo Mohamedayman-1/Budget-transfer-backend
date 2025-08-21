@@ -13,3 +13,37 @@ WARNING 2025-08-12 11:21:20,007 Sqlinjection 36644 34140 SQL injection attempt d
 WARNING 2025-08-12 11:23:37,179 Sqlinjection 40296 21168 SQL injection in JSON string: <p>Enter your rekjason here...   </p><p><s><u>lkkk select * from user</u></s></p><p><br></p>
 WARNING 2025-08-12 11:23:37,179 Sqlinjection 40296 21168 SQL injection in JSON key 'notes' or value: <p>Enter your rekjason here...   </p><p><s><u>lkkk select * from user</u></s></p><p><br></p>
 WARNING 2025-08-12 11:23:37,179 Sqlinjection 40296 21168 SQL injection attempt detected from 127.0.0.1: /api/budget/transfers/create/
+WARNING 2025-08-21 13:19:05,551 Sqlinjection 29408 30056 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:19:05,551 Sqlinjection 29408 30056 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:19:11,026 Sqlinjection 29408 2728 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:19:11,026 Sqlinjection 29408 2728 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:16,970 Sqlinjection 29860 14808 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:16,971 Sqlinjection 29860 14808 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:21,528 Sqlinjection 29860 14236 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:21,529 Sqlinjection 29860 14236 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:26,234 Sqlinjection 29860 20916 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:26,234 Sqlinjection 29860 20916 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:38,076 Sqlinjection 29860 25772 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:38,076 Sqlinjection 29860 25772 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:40,926 Sqlinjection 29860 30704 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:40,926 Sqlinjection 29860 30704 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:21:46,648 Sqlinjection 29860 29808 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:21:46,648 Sqlinjection 29860 29808 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:22:31,603 Sqlinjection 30568 10516 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:22:31,604 Sqlinjection 30568 10516 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:22:35,339 Sqlinjection 30568 29820 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:22:35,340 Sqlinjection 30568 29820 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:22:39,307 Sqlinjection 30568 9692 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:22:39,307 Sqlinjection 30568 9692 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:23:56,342 Sqlinjection 30568 13240 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:23:56,343 Sqlinjection 30568 13240 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:24:08,683 Sqlinjection 30568 4656 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:24:08,683 Sqlinjection 30568 4656 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:24:13,935 Sqlinjection 30568 14216 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:24:13,936 Sqlinjection 30568 14216 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:24:19,255 Sqlinjection 30568 21072 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:24:19,256 Sqlinjection 30568 21072 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:24:27,060 Sqlinjection 30568 17748 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:24:27,061 Sqlinjection 30568 17748 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
+WARNING 2025-08-21 13:24:47,201 Sqlinjection 3932 30716 SQL injection in JSON key 'description' or value: Two-stage FAR approval workflow
+WARNING 2025-08-21 13:24:47,202 Sqlinjection 3932 30716 SQL injection attempt detected from 127.0.0.1: /api/approvals/templates/create/
