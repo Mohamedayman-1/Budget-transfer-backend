@@ -59,6 +59,7 @@ htmlcov/
 *.ora
 *.dmp
 
+*.log
 # Jupyter notebook
 .ipynb_checkpoints/
 
