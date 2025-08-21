@@ -78,7 +78,7 @@ def activate_next_stage(budget_transfer):
         active_stage = (
             workflow_instance.stage_instances
             .filter(status=ApprovalWorkflowStageInstance.STATUS_ACTIVE)
-            .select_for_update()
+            .select_for_update(nowait=True)
             .first()
         )
 
