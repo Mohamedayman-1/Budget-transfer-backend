@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/adjd-transfers/', include('adjd_transaction.urls')),
     path('api/accounts-entities/', include('account_and_entitys.urls')),  # Add the new app's URLs
     path('api/admin_panel/', include('Admin_Panel.urls')),  # Add the new app's URLs
+    path('api/approvals/', include('approvals.urls')),  # Add approvals URLs
 ]
 from django.urls import path
 from .consumers import NotificationConsumer

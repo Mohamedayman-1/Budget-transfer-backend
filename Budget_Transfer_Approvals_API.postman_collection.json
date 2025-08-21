@@ -1,0 +1,748 @@
+{
+	"info": {
+		"name": "Budget Transfer Approvals API",
+		"description": "Complete API collection for Budget Transfer Approval Workflow System",
+		"version": "1.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "your_bearer_token_here",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Workflow Management",
+			"item": [
+				{
+					"name": "Start Approval Workflow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"budget_transfer_id\": 123,\n    \"transfer_type\": \"FAR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/start-workflow/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "start-workflow", ""]
+						},
+						"description": "Creates and starts a complete approval workflow for a budget transfer"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"body": "{\n    \"success\": true,\n    \"message\": \"Workflow started successfully\",\n    \"workflow_instance\": {\n        \"id\": 456,\n        \"status\": \"in_progress\",\n        \"template\": {...},\n        \"current_stage_template\": {...},\n        \"stage_instances\": [...]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create Workflow Instance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"budget_transfer_id\": 123,\n    \"transfer_type\": \"FAR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/create-workflow/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "create-workflow", ""]
+						},
+						"description": "Creates a workflow instance but doesn't activate the first stage"
+					}
+				},
+				{
+					"name": "Cancel Workflow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"budget_transfer_id\": 123,\n    \"reason\": \"Business requirement changed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/cancel-workflow/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "cancel-workflow", ""]
+						},
+						"description": "Cancels an active workflow"
+					}
+				},
+				{
+					"name": "Activate Next Stage",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/activate-next-stage/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "activate-next-stage", "123", ""]
+						},
+						"description": "Manually activates the next stage in the workflow"
+					}
+				}
+			]
+		},
+		{
+			"name": "User Actions",
+			"item": [
+				{
+					"name": "Process User Action - Approve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"approve\",\n    \"comment\": \"Approved with conditions\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/process-action/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "process-action", "123", ""]
+						},
+						"description": "User approves a budget transfer"
+					}
+				},
+				{
+					"name": "Process User Action - Reject",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"reject\",\n    \"comment\": \"Insufficient documentation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/process-action/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "process-action", "123", ""]
+						},
+						"description": "User rejects a budget transfer"
+					}
+				},
+				{
+					"name": "Process User Action - Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"comment\",\n    \"comment\": \"Please provide additional details\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/process-action/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "process-action", "123", ""]
+						},
+						"description": "User adds a comment to the approval"
+					}
+				},
+				{
+					"name": "Delegate Approval",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to_user_id\": 456,\n    \"stage_instance_id\": 789,\n    \"comment\": \"Delegating due to vacation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/delegate/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "delegate", ""]
+						},
+						"description": "Delegates approval responsibility to another user"
+					}
+				}
+			]
+		},
+		{
+			"name": "Status & Information",
+			"item": [
+				{
+					"name": "Check Stage Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/check-stage-status/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "check-stage-status", "123", ""]
+						},
+						"description": "Checks if the current stage is finished and what the outcome is"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"body": "{\n    \"budget_transfer_id\": 123,\n    \"stage_finished\": true,\n    \"outcome\": \"approved\",\n    \"workflow_instance\": {...}\n}"
+						}
+					]
+				},
+				{
+					"name": "Get User Pending Approvals",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/pending-approvals/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "pending-approvals", ""]
+						},
+						"description": "Returns all pending approvals for the authenticated user"
+					}
+				},
+				{
+					"name": "List Workflow Templates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", ""]
+						},
+						"description": "Lists all active workflow templates"
+					}
+				},
+				{
+					"name": "Get Workflow Instance Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/workflow-instance/456/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "workflow-instance", "456", ""]
+						},
+						"description": "Returns detailed information about a specific workflow instance"
+					}
+				},
+				{
+					"name": "Get Workflow by Budget Transfer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/workflow-by-transfer/123/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "workflow-by-transfer", "123", ""]
+						},
+						"description": "Returns workflow instance associated with a budget transfer"
+					}
+				}
+			]
+		},
+		{
+			"name": "Template Management",
+			"item": [
+				{
+					"name": "Create Workflow Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"code\": \"FAR_APPROVAL_V2\",\n    \"transfer_type\": \"FAR\",\n    \"name\": \"FAR Transfer Approval v2\",\n    \"description\": \"Updated FAR transfer approval workflow\",\n    \"is_active\": true,\n    \"version\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/create/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "create", ""]
+						},
+						"description": "Creates a new workflow template"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"body": "{\n    \"success\": true,\n    \"message\": \"Workflow template created successfully\",\n    \"template\": {\n        \"id\": 123,\n        \"code\": \"FAR_APPROVAL_V2\",\n        \"transfer_type\": \"FAR\",\n        \"name\": \"FAR Transfer Approval v2\",\n        \"description\": \"Updated FAR transfer approval workflow\",\n        \"is_active\": true,\n        \"version\": 2,\n        \"stages\": []\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Workflow Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Template Name\",\n    \"description\": \"Updated description\",\n    \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/update/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "update", ""]
+						},
+						"description": "Updates an existing workflow template"
+					}
+				},
+				{
+					"name": "Delete Workflow Template",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/delete/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "delete", ""]
+						},
+						"description": "Deactivates a workflow template (soft delete)"
+					}
+				},
+				{
+					"name": "Get Template Stages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/stages/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "stages", ""]
+						},
+						"description": "Returns all stages for a specific template"
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"body": "{\n    \"template\": {\n        \"id\": 123,\n        \"code\": \"FAR_APPROVAL_V2\",\n        \"name\": \"FAR Transfer Approval v2\"\n    },\n    \"stages\": [\n        {\n            \"id\": 456,\n            \"order_index\": 1,\n            \"name\": \"Department Head Approval\",\n            \"decision_policy\": \"ALL\"\n        },\n        {\n            \"id\": 457,\n            \"order_index\": 2,\n            \"name\": \"Finance Director Approval\",\n            \"decision_policy\": \"ANY\"\n        }\n    ],\n    \"stage_count\": 2\n}"
+						}
+					]
+				},
+				{
+					"name": "Reorder Stage Templates",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stage_ids\": [457, 456, 458]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/stages/reorder/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "stages", "reorder", ""]
+						},
+						"description": "Reorders stages within a template"
+					}
+				}
+			]
+		},
+		{
+			"name": "Stage Management",
+			"item": [
+				{
+					"name": "Create Stage Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_index\": 1,\n    \"name\": \"Department Head Approval\",\n    \"decision_policy\": \"ALL\",\n    \"quorum_count\": null,\n    \"required_user_level\": 2,\n    \"required_role\": \"department_head\",\n    \"allow_reject\": true,\n    \"allow_delegate\": true,\n    \"sla_hours\": 24,\n    \"parallel_group\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/stages/create/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "stages", "create", ""]
+						},
+						"description": "Creates a new stage template for a workflow template"
+					}
+				},
+				{
+					"name": "Bulk Create Stages",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"stages\": [\n        {\n            \"order_index\": 1,\n            \"name\": \"Department Head Approval\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 2,\n            \"required_role\": \"department_head\",\n            \"allow_reject\": true,\n            \"allow_delegate\": true,\n            \"sla_hours\": 24\n        },\n        {\n            \"order_index\": 2,\n            \"name\": \"Finance Director Approval\",\n            \"decision_policy\": \"ANY\",\n            \"required_user_level\": 3,\n            \"required_role\": \"finance_director\",\n            \"allow_reject\": true,\n            \"allow_delegate\": false,\n            \"sla_hours\": 48\n        },\n        {\n            \"order_index\": 3,\n            \"name\": \"CEO Final Approval\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 4,\n            \"required_role\": \"ceo\",\n            \"allow_reject\": true,\n            \"allow_delegate\": false,\n            \"sla_hours\": 72\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/stages/bulk-create/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "stages", "bulk-create", ""]
+						},
+						"description": "Creates multiple stage templates at once"
+					}
+				},
+				{
+					"name": "Create Stage - QUORUM Policy Example",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_index\": 4,\n    \"name\": \"Finance Committee Review\",\n    \"decision_policy\": \"QUORUM\",\n    \"quorum_count\": 3,\n    \"required_user_level\": 3,\n    \"required_role\": \"finance_committee\",\n    \"allow_reject\": true,\n    \"allow_delegate\": true,\n    \"sla_hours\": 48\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/templates/123/stages/create/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "templates", "123", "stages", "create", ""]
+						},
+						"description": "Creates a stage with QUORUM decision policy requiring 3 approvals"
+					}
+				},
+				{
+					"name": "Update Stage Template",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Stage Name\",\n    \"decision_policy\": \"QUORUM\",\n    \"quorum_count\": 2,\n    \"sla_hours\": 48\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/stages/456/update/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "stages", "456", "update", ""]
+						},
+						"description": "Updates an existing stage template"
+					}
+				},
+				{
+					"name": "Delete Stage Template",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/approvals/stages/456/delete/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "stages", "456", "delete", ""]
+						},
+						"description": "Deletes a stage template (hard delete)"
+					}
+				}
+			]
+		},
+		{
+			"name": "Complete Workflow Examples",
+			"item": [
+				{
+					"name": "Example 1: Simple FAR Workflow",
+					"item": [
+						{
+							"name": "1. Create FAR Template",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"code\": \"SIMPLE_FAR_V1\",\n    \"transfer_type\": \"FAR\",\n    \"name\": \"Simple FAR Approval\",\n    \"description\": \"Two-stage FAR approval workflow\",\n    \"is_active\": true,\n    \"version\": 1\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/templates/create/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "templates", "create", ""]
+								}
+							}
+						},
+						{
+							"name": "2. Create Stages for FAR Template",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stages\": [\n        {\n            \"order_index\": 1,\n            \"name\": \"Department Head Review\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 2,\n            \"required_role\": \"department_head\",\n            \"allow_reject\": true,\n            \"allow_delegate\": true,\n            \"sla_hours\": 24\n        },\n        {\n            \"order_index\": 2,\n            \"name\": \"Finance Director Approval\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 3,\n            \"required_role\": \"finance_director\",\n            \"allow_reject\": true,\n            \"allow_delegate\": false,\n            \"sla_hours\": 48\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/templates/{{template_id}}/stages/bulk-create/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "templates", "{{template_id}}", "stages", "bulk-create", ""]
+								}
+							}
+						},
+						{
+							"name": "3. Start Workflow for Budget Transfer",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"budget_transfer_id\": 100,\n    \"transfer_type\": \"FAR\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/start-workflow/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "start-workflow", ""]
+								}
+							}
+						},
+						{
+							"name": "4. Department Head Approves",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"action\": \"approve\",\n    \"comment\": \"Department approves this transfer\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/process-action/100/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "process-action", "100", ""]
+								}
+							}
+						},
+						{
+							"name": "5. Finance Director Final Approval",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"action\": \"approve\",\n    \"comment\": \"Finance department final approval\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/process-action/100/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "process-action", "100", ""]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Example 2: Complex Multi-Level Workflow",
+					"item": [
+						{
+							"name": "1. Create Complex Template",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"code\": \"COMPLEX_APPROVAL_V1\",\n    \"transfer_type\": \"GEN\",\n    \"name\": \"Complex Multi-Level Approval\",\n    \"description\": \"Four-stage approval with quorum requirements\",\n    \"is_active\": true,\n    \"version\": 1\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/templates/create/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "templates", "create", ""]
+								}
+							}
+						},
+						{
+							"name": "2. Create Complex Stages",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"stages\": [\n        {\n            \"order_index\": 1,\n            \"name\": \"Supervisor Review\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 1,\n            \"required_role\": \"supervisor\",\n            \"allow_reject\": true,\n            \"allow_delegate\": true,\n            \"sla_hours\": 8\n        },\n        {\n            \"order_index\": 2,\n            \"name\": \"Department Head Approval\",\n            \"decision_policy\": \"ANY\",\n            \"required_user_level\": 2,\n            \"required_role\": \"department_head\",\n            \"allow_reject\": true,\n            \"allow_delegate\": true,\n            \"sla_hours\": 24\n        },\n        {\n            \"order_index\": 3,\n            \"name\": \"Finance Committee Review\",\n            \"decision_policy\": \"QUORUM\",\n            \"quorum_count\": 2,\n            \"required_user_level\": 3,\n            \"required_role\": \"finance_committee\",\n            \"allow_reject\": true,\n            \"allow_delegate\": true,\n            \"sla_hours\": 48\n        },\n        {\n            \"order_index\": 4,\n            \"name\": \"Executive Final Approval\",\n            \"decision_policy\": \"ALL\",\n            \"required_user_level\": 4,\n            \"required_role\": \"executive\",\n            \"allow_reject\": true,\n            \"allow_delegate\": false,\n            \"sla_hours\": 72\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/approvals/templates/{{complex_template_id}}/stages/bulk-create/",
+									"host": ["{{base_url}}"],
+									"path": ["api", "approvals", "templates", "{{complex_template_id}}", "stages", "bulk-create", ""]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Testing Scenarios",
+			"item": [
+				{
+					"name": "Rejection Scenario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"action\": \"reject\",\n    \"comment\": \"Insufficient documentation provided\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/process-action/{{budget_transfer_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "process-action", "{{budget_transfer_id}}", ""]
+						},
+						"description": "Test rejection scenario"
+					}
+				},
+				{
+					"name": "Delegation Scenario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"to_user_id\": {{delegate_user_id}},\n    \"stage_instance_id\": {{stage_instance_id}},\n    \"comment\": \"Delegating approval due to business trip\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/delegate/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "delegate", ""]
+						},
+						"description": "Test delegation scenario"
+					}
+				},
+				{
+					"name": "Cancel Workflow Scenario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"budget_transfer_id\": {{budget_transfer_id}},\n    \"reason\": \"Transfer no longer needed due to budget reallocation\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/approvals/cancel-workflow/",
+							"host": ["{{base_url}}"],
+							"path": ["api", "approvals", "cancel-workflow", ""]
+						},
+						"description": "Test workflow cancellation"
+					}
+				}
+			]
+		}
+	]
+}
