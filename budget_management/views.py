@@ -163,7 +163,7 @@ class ListBudgetTransferView(APIView):
         # TODO: Implement entity filtering without complex annotations
         
         if request.user.abilities.count() > 0:
-            transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
+            transfers = filter_budget_transfers_all_in_entities(transfers, request.user, 'edit')
         
         print(transfers.count())
 
@@ -224,7 +224,7 @@ class ListBudgetTransfer_approvels_View(APIView):
         )
         
         if request.user.abilities.count() > 0:
-            transfers = filter_budget_transfers_all_in_entities(transfers, request.user)
+            transfers = filter_budget_transfers_all_in_entities(transfers, request.user, 'approve')
         
         if code:
             transfers = transfers.filter(code__icontains=code)

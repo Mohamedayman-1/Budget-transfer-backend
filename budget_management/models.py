@@ -50,8 +50,34 @@ class xx_BudgetTransfer(models.Model):
 # WHERE XX_Entity_XX.id IN (value1, value2, ...);
 
 from django.db.models import Q, Count, F
+from django.db.models import Value
+from django.db.models.functions import Cast
+from django.db.models import CharField
 
-def filter_budget_transfers_all_in_entities(budget_transfers, user):
+def get_entities_with_children(entity_ids):
+    """
+    Given a list of entity IDs, return all XX_Entity objects including their children (recursively).
+    """
+    # Start with the initial set
+    entities = list(XX_Entity.objects.filter(id__in=entity_ids))
+    collected_ids = set(e.id for e in entities)
+
+    queue = list(entities)  # start with base entities
+    while queue:
+        parent_entity = queue.pop(0)
+
+        # Find children where parent matches the string version of this entity number
+        children = XX_Entity.objects.filter(parent=str(parent_entity.entity))
+
+        for child in children:
+            if child.id not in collected_ids:
+                collected_ids.add(child.id)
+                entities.append(child)
+                queue.append(child)
+
+    return entities
+
+def filter_budget_transfers_all_in_entities(budget_transfers, user, Type = 'edit'):
     """
     From a given queryset of BudgetTransfer objects,
     return only those where *all* related transactions
@@ -59,8 +85,9 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
     
     Modified to avoid Oracle NCLOB issues with complex annotations.
     """
-    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity and ability.Type == 'edit']
-    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
+    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity and ability.Type == Type]
+    entities = get_entities_with_children(entity_ids)
+    entity_codes = [e.entity for e in entities]
     
     # Simplified approach to avoid NCLOB issues
     # Get transfer IDs that have all their transactions in allowed entities
@@ -109,20 +136,6 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user):
             Q(adjd_transfers__cost_center_code__in=entity_codes) | Q(user_id=user.id)
         ).distinct()
 
-
-def filter_budget_transfers_some_in_entities(budget_transfers, user):
-    """
-    From a given queryset of BudgetTransfer objects,
-    return only those where *some* related transactions
-    belong to the given entity_ids.
-    """
-    entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity]
-
-    entity_codes = XX_Entity.objects.filter(id__in=entity_ids).values_list("entity", flat=True)
-
-    return budget_transfers.filter(
-        adjd_transfers__cost_center_code__in=entity_codes
-    ).distinct()
 
 
 class xx_BudgetTransferAttachment(models.Model):
