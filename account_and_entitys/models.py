@@ -3,7 +3,7 @@ from django.db import models
 
 class XX_Account(models.Model):
     """Model representing ADJD accounts"""
-    account = models.IntegerField(unique=True)
+    account = models.CharField(max_length=50, unique=True)
     parent = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
     alias_default = models.CharField(max_length=255, null=True, blank=True)  # Changed from EncryptedCharField
     
@@ -15,7 +15,7 @@ class XX_Account(models.Model):
 
 class XX_Entity(models.Model):
     """Model representing ADJD entities"""
-    entity = models.IntegerField()
+    entity = models.CharField(max_length=50, unique=True)
     parent = models.CharField(max_length=50, null=True, blank=True)  # Changed from EncryptedCharField
     alias_default = models.CharField(max_length=255, null=True, blank=True)  # Changed from EncryptedCharField
 
@@ -27,13 +27,13 @@ class XX_Entity(models.Model):
 
 class XX_PivotFund(models.Model):
     """Model representing ADJD pivot funds"""
-    entity = models.IntegerField()
-    account = models.IntegerField()
+    entity = models.CharField(max_length=50)
+    account = models.CharField(max_length=50)
     year = models.IntegerField()
-    actual = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
-    fund = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
-    budget = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
-    encumbrance = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    actual = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    fund = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    budget = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
+    encumbrance = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True)  # Changed from EncryptedCharField to DecimalField
 
 
     class Meta:
@@ -63,8 +63,8 @@ class XX_TransactionAudit(models.Model):
 class XX_ACCOUNT_ENTITY_LIMIT(models.Model):
     """Model representing ADJD account entity limits"""
     id = models.AutoField(primary_key=True)
-    account_id = models.IntegerField()
-    entity_id = models.IntegerField()
+    account_id = models.CharField(max_length=50)
+    entity_id = models.CharField(max_length=50)
     is_transer_allowed_for_source = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
     is_transer_allowed_for_target = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
     is_transer_allowed = models.CharField(max_length=255,null=True, blank=True)  # Changed from EncryptedBooleanField
