@@ -185,12 +185,14 @@ def _create_assignments(stage_instance):
         qs = qs.filter(role=required_role)
 
     for user in qs:
+        # level_name=user.user_level.name if user.user_level else None
         ApprovalAssignment.objects.get_or_create(
             stage_instance=stage_instance,
             user=user,
+
             defaults={
                 "role_snapshot": user.role,
-                "level_snapshot": getattr(user.level.name, "name", None),
+                "level_snapshot": getattr(user.user_level.name, "name", None),
                 "is_mandatory": True,
             },
         )

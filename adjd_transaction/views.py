@@ -584,10 +584,6 @@ class AdjdtranscationtransferSubmit(APIView):
                 # Update the budget transfer status
                 budget_transfer = xx_BudgetTransfer.objects.get(pk=transaction_id)
                 transfer_type = budget_transfer.type  # Set the transfer type
-                # budget_transfer.status_level = 2
-                # budget_transfer.approvel_1 = request.user.username
-                # budget_transfer.approvel_1_date = timezone.now()
-                # budget_transfer.save()
                 workflow_instance = start_approval_workflow(budget_transfer, transfer_type)
 
                 # user_submit=xx_notification()
