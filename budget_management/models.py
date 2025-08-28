@@ -77,7 +77,7 @@ def get_entities_with_children(entity_ids):
 
     return entities
 
-def filter_budget_transfers_all_in_entities(budget_transfers, user, Type = 'edit'):
+def filter_budget_transfers_all_in_entities(budget_transfers, user, Type = 'edit',dashboard_filler_per_project=None):
     """
     From a given queryset of BudgetTransfer objects,
     return only those where *all* related transactions
@@ -86,9 +86,13 @@ def filter_budget_transfers_all_in_entities(budget_transfers, user, Type = 'edit
     Modified to avoid Oracle NCLOB issues with complex annotations.
     """
     entity_ids = [ability.Entity.id for ability in user.abilities.all() if ability.Entity and ability.Type == Type]
+    if dashboard_filler_per_project is not None:
+        if int(dashboard_filler_per_project) in entity_ids:
+            entity_ids = [int(dashboard_filler_per_project)]
     entities = get_entities_with_children(entity_ids)
+   
     entity_codes = [e.entity for e in entities]
-    
+
     # Simplified approach to avoid NCLOB issues
     # Get transfer IDs that have all their transactions in allowed entities
     from django.db import connection
