@@ -57,7 +57,6 @@ class TransferPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = "page_size"
     max_page_size = 100
-
 class CreateBudgetTransferView(APIView):
     """Create budget transfers"""
 
@@ -139,39 +138,115 @@ class CreateBudgetTransferView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class ListBudgetTransferView(APIView):
     """List budget transfers with pagination"""
 
     permission_classes = [IsAuthenticated]
     pagination_class = TransferPagination
 
-    def post(self, request):
-        code = request.data.get("code", None)
-        date = request.data.get("date", None)
-        start_date = request.data.get("start_date", None)
-        end_date = request.data.get("end_date", None)
-        search = request.data.get("search")
+    def get(self, request):
+        status_type = request.query_params.get("status_type", None)
+        search = request.query_params.get("search")
+        day = request.query_params.get("day")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        sdate = request.query_params.get("start_date") or request.query_params.get("from_date")
+        edate = request.query_params.get("end_date") or request.query_params.get("to_date")
+        code = request.query_params.get("code", None)
 
-        # Simplify the query to avoid Oracle NCLOB issues
+
         if request.user.role == "admin":
-            transfers = xx_BudgetTransfer.objects.all()
+            if status_type:
+                transfers = xx_BudgetTransfer.objects.filter(status=status_type)
+            else:
+                transfers = xx_BudgetTransfer.objects.all()
         else:
-            transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
+            if status_type:
+                transfers = xx_BudgetTransfer.objects.filter(status=status_type,user_id=request.user.id)
+            else:
+                transfers = xx_BudgetTransfer.objects.filter(user_id=request.user.id)
 
-       
-        print(transfers.count())
-        # Skip complex entity filtering for now to avoid NCLOB issues
-        # TODO: Implement entity filtering without complex annotations
-        
-        if request.user.abilities.count() > 0:
-            transfers = filter_budget_transfers_all_in_entities(transfers, request.user, 'edit')
-        
-        print(transfers.count())
+        print(type(code))
+
 
         if code:
-            transfers = transfers.filter(code__icontains=code)
-        print(transfers.count())
+            # Coerce to string first and use upper() to avoid errors if a non-string is provided
+            code_upper = code.upper()
+            transfers = transfers.filter(type=code_upper)
+
+
+        if request.user.abilities.count() > 0:
+            transfers = filter_budget_transfers_all_in_entities(budget_transfers=transfers, user=request.user, Type='edit')
+
+        # Free-text search across common fields (icontains)
+        if search:
+            s = str(search).strip()
+            query = (
+                Q(code__icontains=s)
+                | Q(requested_by__icontains=s)
+                | Q(status__icontains=s)
+                | Q(transaction_date__icontains=s)
+                | Q(type__icontains=s)
+            )
+            if s.isdigit():
+                # Support numeric search on transaction_id
+                try:
+                    query |= Q(transaction_id=int(s))
+                except Exception:
+                    pass
+            transfers = transfers.filter(query)
+        
+        try:
+            from datetime import datetime as _dt
+
+            def _validate(fmt, value):
+                try:
+                    _dt.strptime(value, fmt)
+                    return True
+                except Exception:
+                    return False
+                
+            if day:
+                if not _validate("%Y-%m-%d", day):
+                    return Response({"error": "Invalid day format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+                transfers = transfers.filter(request_date__startswith=day)
+            elif month:
+                mval = str(month)
+                prefix = None
+                if _validate("%Y-%m", mval):
+                    prefix = mval
+                else:
+                    if year:
+                        try:
+                            yi = int(year)
+                            mi = int(mval)
+                            if 1 <= mi <= 12 and 1900 <= yi <= 2100:
+                                prefix = f"{yi}-{mi:02d}"
+                        except Exception:
+                            pass
+                if not prefix:
+                    return Response({"error": "Invalid month. Provide YYYY-MM or month with 'year'"}, status=status.HTTP_400_BAD_REQUEST)
+                transfers = transfers.filter(request_date__startswith=prefix)
+            elif year:
+                try:
+                    yi = int(year)
+                    if yi < 1900 or yi > 2100:
+                        raise ValueError()
+                except Exception:
+                    return Response({"error": "Invalid year. Use YYYY in range 1900-2100"}, status=status.HTTP_400_BAD_REQUEST)
+                transfers = transfers.filter(request_date__startswith=f"{int(year)}-")
+            elif sdate and edate:
+                sd = str(sdate)
+                ed = str(edate)
+                if not (_validate("%Y-%m-%d", sd) and _validate("%Y-%m-%d", ed)):
+                    return Response({"error": "Invalid date range. Use YYYY-MM-DD for start_date and end_date"}, status=status.HTTP_400_BAD_REQUEST)
+                if sd > ed:
+                    sd, ed = ed, sd
+                transfers = transfers.filter(request_date__gte=sd, request_date__lte=ed)
+        except Exception as _date_err:
+            return Response({"error": f"Failed to apply date filter: {_date_err}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
         # Use only safe fields for ordering to avoid Oracle NCLOB issues
         transfers = transfers.order_by("-transaction_id")
         
@@ -202,7 +277,6 @@ class ListBudgetTransferView(APIView):
             'next': f"?page={page + 1}&page_size={page_size}" if end_idx < len(transfer_list) else None,
             'previous': f"?page={page - 1}&page_size={page_size}" if page > 1 else None
         })
-
 class ListBudgetTransfer_approvels_View(APIView):
     """List budget transfers with pagination"""
 
@@ -214,6 +288,7 @@ class ListBudgetTransfer_approvels_View(APIView):
         date = request.data.get("date", None)
         start_date = request.data.get("start_date", None)
         end_date = request.data.get("end_date", None)
+
         if code is None:
             code = "FAR"
         status_level_val = (
@@ -222,7 +297,7 @@ class ListBudgetTransfer_approvels_View(APIView):
             else 0
         )
         transfers = xx_BudgetTransfer.objects.filter(
-            status_level=status_level_val, code__startswith=code,status= "pending"
+            status_level=status_level_val, type=code,status= "pending"
         )
         
         if request.user.abilities.count() > 0:
@@ -231,12 +306,12 @@ class ListBudgetTransfer_approvels_View(APIView):
         if code:
             transfers = transfers.filter(code__icontains=code)
 
-
-
         transfers = transfers.order_by("-request_date")
+
+        # Paginate results
         paginator = self.pagination_class()
-        paginated_transfers = paginator.paginate_queryset(transfers, request)
-        serializer = BudgetTransferSerializer(paginated_transfers, many=True)
+        page = paginator.paginate_queryset(transfers, request, view=self)
+        serializer = BudgetTransferSerializer(page, many=True)
 
         # Create a list of dictionaries with just the fields we want
         filtered_data = []
@@ -254,7 +329,6 @@ class ListBudgetTransfer_approvels_View(APIView):
             filtered_data.append(filtered_item)
 
         return paginator.get_paginated_response(filtered_data)
-
 class ApproveBudgetTransferView(APIView):
     """Approve or reject budget transfer requests (admin only)"""
 
@@ -301,7 +375,6 @@ class ApproveBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 class GetBudgetTransferView(APIView):
     """Get a specific budget transfer by ID"""
 
@@ -333,7 +406,6 @@ class GetBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 class UpdateBudgetTransferView(APIView):
     """Update a budget transfer"""
 
@@ -413,7 +485,6 @@ class UpdateBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 class DeleteBudgetTransferView(APIView):
     """Delete a specific budget transfer by ID"""
 
@@ -449,7 +520,6 @@ class DeleteBudgetTransferView(APIView):
             return Response(
                 {"message": "Transfer not found."}, status=status.HTTP_404_NOT_FOUND
             )
-
 class Adjdtranscationtransferapprovel_reject(APIView):
     """Submit ADJD transaction transfers for approval"""
 
@@ -618,7 +688,6 @@ class Adjdtranscationtransferapprovel_reject(APIView):
             {"message": "Transfers processed", "results": results},
             status=status.HTTP_200_OK,
         )
-
 class BudgetTransferFileUploadView(APIView):
     """Upload files for a budget transfer and store as BLOBs"""
 
@@ -692,7 +761,6 @@ class BudgetTransferFileUploadView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-
 class DeleteBudgetTransferAttachmentView(APIView):
     """Delete a specific file attachment from a budget transfer"""
 
@@ -776,7 +844,6 @@ class DeleteBudgetTransferAttachmentView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-
 class ListBudgetTransferAttachmentsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -815,7 +882,6 @@ class ListBudgetTransferAttachmentsView(APIView):
             return Response(
                 {"error": "Transfer not found"}, status=status.HTTP_404_NOT_FOUND
             )
-
 class list_budget_transfer_reject_reason(APIView):
     """List all budget transfer reject reasons"""
 
@@ -841,7 +907,6 @@ class list_budget_transfer_reject_reason(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
 class StaticDashboardView(APIView):
     """Optimized dashboard view for encrypted budget transfers"""
     permission_classes = [IsAuthenticated]
@@ -902,10 +967,8 @@ class StaticDashboardView(APIView):
                 {"error": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-
 class DashboardBudgetTransferView(APIView):
+
     """Optimized dashboard view for encrypted budget transfers"""
     permission_classes = [IsAuthenticated]
 
@@ -1148,3 +1211,58 @@ class DashboardBudgetTransferView(APIView):
                 {"error": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+
+
+
+### mobile version #####
+
+class ListBudgetTransfer_approvels_MobileView(APIView):
+    """List budget transfers with pagination"""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = TransferPagination
+
+    def get(self, request):
+        code = request.query_params.get("code", None)
+        date = request.data.get("date", None)
+        start_date = request.data.get("start_date", None)
+        end_date = request.data.get("end_date", None)
+        
+        if code is None:
+            code = "FAR"
+        status_level_val = (
+            request.user.user_level.level_order
+            if request.user.user_level.level_order
+            else 0
+        )
+        transfers = xx_BudgetTransfer.objects.filter(
+            status_level=status_level_val, type=code,status= "pending"
+        )
+        
+        if request.user.abilities.count() > 0:
+            transfers = filter_budget_transfers_all_in_entities(transfers, request.user, 'approve')
+        
+        if code:
+            transfers = transfers.filter(code__icontains=code)
+
+        transfers = transfers.order_by("-request_date")
+        # Return all results without pagination
+        serializer = BudgetTransferSerializer(transfers, many=True)
+
+        # Create a list of dictionaries with just the fields we want
+        filtered_data = []
+        for item in serializer.data:
+            filtered_item = {
+                "transaction_id": item.get("transaction_id"),
+                "amount": item.get("amount"),
+                "status": item.get("status"),
+                "status_level": item.get("status_level"),
+                "requested_by": item.get("requested_by"),
+                "request_date": item.get("request_date"),
+                "code": item.get("code"),
+                "transaction_date": item.get("transaction_date"),
+            }
+            filtered_data.append(filtered_item)
+
+        return Response(filtered_data, status=status.HTTP_200_OK)
